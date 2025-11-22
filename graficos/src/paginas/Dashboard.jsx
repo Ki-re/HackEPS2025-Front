@@ -1,4 +1,3 @@
-// src/pages/Dashboard.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -7,6 +6,11 @@ import {
   Tooltip,
   Cell,
   ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
 } from "recharts";
 import "./Dashboard.css";
 import { fetchInstances } from "../api/client";
@@ -24,7 +28,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 1. Cargar instancias desde la API
   useEffect(() => {
     const load = async () => {
       try {
@@ -43,7 +46,6 @@ const Dashboard = () => {
     load();
   }, []);
 
-  // 2. Datos para el gráfico principal: nº de instancias por proveedor
   const mainChartData = useMemo(() => {
     const counts = Object.fromEntries(PROVIDERS.map((p) => [p, 0]));
 
@@ -63,9 +65,7 @@ const Dashboard = () => {
       .filter((item) => item.value > 0);
   }, [instances]);
 
-  // 3. Datos para los gráficos pequeños: distribución de estados por proveedor
   const smallChartsData = useMemo(() => {
-    // Inicializamos contadores
     const baseStatusCounts = () =>
       Object.fromEntries(STATUSES.map((s) => [s, 0]));
 
@@ -78,27 +78,48 @@ const Dashboard = () => {
       const status = (inst.status || "").toLowerCase();
 
       if (!byProviderStatus[provider]) return;
-      if (!byProviderStatus[provider][status] && byProviderStatus[provider][status] !== 0) return;
+      if (byProviderStatus[provider][status] === undefined) return;
 
       byProviderStatus[provider][status] += 1;
     });
 
     const toPieData = (statusCounts) =>
       STATUSES.map((s) => ({
-        name: s, // nombre = estado
+        name: s,
         value: statusCounts[s],
       })).filter((item) => item.value > 0);
 
     return {
       aws: toPieData(byProviderStatus.aws),
       gcp: toPieData(byProviderStatus.gcp),
-      edge: toPieData(byProviderStatus.edge),
+      clouding: toPieData(byProviderStatus.clouding),
     };
   }, [instances]);
 
-  // 4. Navegación al detalle:
-  // - En el gráfico principal: detalle por proveedor
-  // - En los pequeños: detalle por proveedor + estado
+  const barChartData = useMemo(() => {
+    const baseStatusCounts = () =>
+      Object.fromEntries(STATUSES.map((s) => [s, 0]));
+
+    const byProviderStatus = Object.fromEntries(
+      PROVIDERS.map((p) => [p, baseStatusCounts()])
+    );
+
+    instances.forEach((inst) => {
+      const provider = (inst.provider || "").toLowerCase();
+      const status = (inst.status || "").toLowerCase();
+
+      if (!byProviderStatus[provider]) return;
+      if (byProviderStatus[provider][status] === undefined) return;
+
+      byProviderStatus[provider][status] += 1;
+    });
+
+    return PROVIDERS.map((p) => ({
+      provider: p.toUpperCase(),
+      ...byProviderStatus[p],
+    }));
+  }, [instances]);
+
   const handleMainSliceClick = (provider) => {
     navigate(`/detalle/provider/${provider}`);
   };
@@ -107,23 +128,17 @@ const Dashboard = () => {
     navigate(`/detalle/status/${provider}/${status}`);
   };
 
-  const renderPie = (data, { isMain = false, onSliceClick }) => (
+  const renderPie = (data, { isMain = false, onSliceClick } = {}) => (
     <ResponsiveContainer width="100%" height="100%">
-      <PieChart
-        margin={
-          isMain
-            ? { top: 0, right: 0, bottom: 0, left: 0 }
-            : { top: 10, right: 10, bottom: 10, left: 10 }
-        }
-      >
+      <PieChart>
         <Pie
           data={data}
           dataKey="value"
           nameKey="name"
           cx="50%"
           cy="50%"
-          outerRadius={isMain ? 190 : 50}
-          onClick={(entry, index) => {
+          outerRadius={isMain ? "85%" : "75%"}
+          onClick={(_, index) => {
             if (!onSliceClick) return;
             const item = data[index];
             if (!item) return;
@@ -168,39 +183,66 @@ const Dashboard = () => {
   return (
     <div className="dashboard-container">
       <div className="charts-row">
-        {/* Gráfico principal */}
         <div className="main-chart-card">
           <div className="main-chart-title">
             <h2 className="card-title">Instancias por proveedor</h2>
           </div>
 
-          <div className="main-chart">
-            {renderPie(mainChartData, {
-              isMain: true,
-              onSliceClick: (item) => handleMainSliceClick(item.provider),
-            })}
-          </div>
-
-          {/* Leyenda principal */}
-          <div className="main-chart-legend">
-            {mainChartData.map((item, index) => (
-              <div className="legend-item" key={item.provider}>
-                <span
-                  className="legend-color"
-                  style={{
-                    backgroundColor:
-                      MAIN_COLORS[index % MAIN_COLORS.length],
-                  }}
-                />
-                <span>{item.name}</span>
+          <div className="main-chart-content">
+            <div className="main-chart-pie-column">
+              <div className="main-chart-pie">
+                <div className="main-chart-pie-inner">
+                  {renderPie(mainChartData, {
+                    isMain: true,
+                    onSliceClick: (item) =>
+                      handleMainSliceClick(item.provider),
+                  })}
+                </div>
               </div>
-            ))}
+
+              <div className="main-chart-legend">
+                {mainChartData.map((item, index) => (
+                  <div className="legend-item" key={index}>
+                    <span
+                      className="legend-color"
+                      style={{
+                        backgroundColor:
+                          MAIN_COLORS[index % MAIN_COLORS.length],
+                      }}
+                    />
+                    <span>{item.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="main-chart-bar">
+              <div className="main-chart-bar-inner">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={barChartData}
+                    margin={{ top: 10, right: 20, bottom: 30, left: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="provider" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    {STATUSES.map((status) => (
+                      <Bar
+                        key={status}
+                        dataKey={status}
+                        stackId="a"
+                        fill={STATUS_COLORS[status]}
+                      />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Gráficos pequeños por proveedor */}
         <div className="small-charts-wrapper">
-          {/* Leyenda de estados (con terminated y error) */}
           <div className="small-charts-legend">
             {STATUSES.map((status) => (
               <div className="legend-item" key={status}>
@@ -236,9 +278,9 @@ const Dashboard = () => {
           <div className="small-chart-block">
             <h3 className="small-chart-title">Clouding</h3>
             <div className="small-chart">
-              {renderPie(smallChartsData.edge, {
+              {renderPie(smallChartsData.clouding, {
                 onSliceClick: (item) =>
-                  handleSmallSliceClick("edge", item.name),
+                  handleSmallSliceClick("clouding", item.name),
               })}
             </div>
           </div>

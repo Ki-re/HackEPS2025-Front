@@ -1,5 +1,5 @@
 .dashboard-container {
-  height: 100vh; /* ocupa toda la pantalla */
+  height: 100vh;
   background-color: #6366f1;
   display: flex;
   flex-direction: column;
@@ -15,17 +15,15 @@
   margin: 0 0 16px 0;
 }
 
-/* Fila principal: panel grande + panel pequeño, misma altura */
 .charts-row {
   width: 100%;
   max-width: 1400px;
   display: flex;
   gap: 20px;
-  align-items: stretch; /* 🔹 misma altura para las dos tarjetas */
-  flex: 1;              /* ocupa todo el alto que queda bajo el título */
+  align-items: stretch;
+  flex: 1;
 }
 
-/* Panel grande izquierda */
 .main-chart-card {
   background-color: rgba(255, 255, 255, 0.95);
   border-radius: 16px;
@@ -33,14 +31,13 @@
   flex: 4;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   color: #000;
-  position: relative;          /* ⬅️ para poder posicionar el título encima */
+  position: relative;
   display: flex;
-  flex-direction: column;      /* ⬅️ título (absoluto) + gráfico + leyenda */
+  flex-direction: column;
   align-items: stretch;
   box-sizing: border-box;
 }
 
-/* Título del principal: flotando en la esquina, ya no afecta al centro */
 .main-chart-title {
   position: absolute;
   top: 20px;
@@ -51,58 +48,55 @@
   margin: 0;
 }
 
-/* Zona del gráfico principal: ocupa todo el espacio y centra el pie */
-.main-chart {
+.main-chart-content {
   flex: 1;
-  min-width: 0;
-  height: 100%;
   display: flex;
-  align-items: center;       /* centra vertical */
-  justify-content: center;   /* centra horizontal */
-  padding: 40px 16px 48px;   /* aire arriba (título) y abajo (leyenda) */
+  align-items: center;
+  justify-content: space-evenly;
+  gap: 48px;
+  padding: 64px 32px 24px;
 }
 
-/* Panel pequeño derecha */
-.small-charts-wrapper {
-  background-color: rgba(255, 255, 255, 0.95);
-  border-radius: 16px;
-  padding: 16px;
-  flex: 1;           /* bastante más estrecho */
-  max-width: 260px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-  color: #000;
+.main-chart-pie-column {
+  flex: 0 0 320px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  box-sizing: border-box;
-}
-
-/* Cada bloque pequeño (título + gráfico) */
-.small-chart-block {
-  flex: 1;
-  min-height: 140px;
-  display: flex;
-  flex-direction: column;
-}
-
-.small-chart {
-  flex: 1;
-}
-
-/* Títulos de los pequeños */
-.small-chart-title {
-  margin: 0 0 4px 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-/* Legend común de los pequeños */
-.small-charts-legend {
-  margin-top: 4px;
-  display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 16px;
+}
+
+.main-chart-pie {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main-chart-pie-inner {
+  width: 100%;
+  max-width: 300px;
+  aspect-ratio: 1 / 1;
+}
+
+.main-chart-bar {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main-chart-bar-inner {
+  width: 100%;
+  max-width: 820px;
+  height: 340px;
+}
+
+.main-chart-legend {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
   font-size: 0.8rem;
 }
 
@@ -118,17 +112,54 @@
   border-radius: 3px;
 }
 
-.legend-pending { background-color: #f1de63; }
-.legend-running { background-color: #63f1b1; }
-.legend-stopped { background-color: #bdbcb5; }
-
-
-/* Leyenda del gráfico principal, con el mismo estilo que la de la derecha */
-.main-chart-legend {
+.small-charts-wrapper {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 16px;
+  flex: 1;
+  max-width: 260px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  color: #000;
   display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.small-charts-legend {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 12px;
   font-size: 0.8rem;
-  margin-top: -8px;          /* lo acercamos un poco al gráfico */
-  padding-bottom: 4px;
+}
+
+.small-chart-block {
+  flex: 1;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+}
+
+.small-chart {
+  flex: 1;
+}
+
+.small-chart-title {
+  margin: 0 0 4px 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.legend-pending {
+  background-color: #f1de63;
+}
+
+.legend-running {
+  background-color: #63f1b1;
+}
+
+.legend-stopped {
+  background-color: #bdbcb5;
 }
