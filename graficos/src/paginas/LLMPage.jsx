@@ -22,12 +22,18 @@ const LLMPage = () => {
       text: value,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const processingId = Date.now() + 1;
+    const processingMessage = {
+      id: processingId,
+      role: "assistant",
+      text: "Procesando... esto puede tardar unos minutos.",
+    };
+
+    setMessages((prev) => [...prev, userMessage, processingMessage]);
     setInput("");
 
-    let response;
     try {
-      response = await fetch(
+      const response = await fetch(
         "http://localhost:8000/api/v1/instances/auto-cluster",
         {
           method: "POST",
@@ -37,47 +43,15 @@ const LLMPage = () => {
           body: JSON.stringify({ description: value }),
         }
       );
-    } catch (err) {
-      const assistantMessage = {
-        id: Date.now() + 1,
-        role: "assistant",
-        text:
-          "No se ha podido conectar con el servidor LLM: " +
-          (err?.message || "Error de red"),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-      return;
-    }
 
-    try {
-      const contentType = response.headers.get("content-type") || "";
-      let raw = "";
+      let responseText;
 
-      if (contentType.includes("application/json")) {
-        raw = await response.text();
-        let data;
-        try {
-          data = JSON.parse(raw);
-        } catch {
-          const assistantMessage = {
-            id: Date.now() + 2,
-            role: "assistant",
-            text:
-              "El servidor ha respondido pero el formato no es JSON válido:\n" +
-              raw,
-          };
-          setMessages((prev) => [...prev, assistantMessage]);
-          return;
-        }
-
-        let responseText;
-        if (!response.ok) {
-          responseText =
-            data.message ||
-            `Error del servidor (${response.status}): ${JSON.stringify(
-              data
-            )}`;
-        } else {
+      if (!response.ok) {
+        responseText = `Error del servidor (${response.status}).`;
+      } else {
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          const data = await response.json();
           if (typeof data === "string") {
             responseText = data;
           } else if (data.message) {
@@ -85,35 +59,26 @@ const LLMPage = () => {
           } else {
             responseText = JSON.stringify(data, null, 2);
           }
+        } else {
+          responseText = await response.text();
         }
-
-        const assistantMessage = {
-          id: Date.now() + 3,
-          role: "assistant",
-          text: responseText,
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
-      } else {
-        const textBody = await response.text();
-        const assistantMessage = {
-          id: Date.now() + 4,
-          role: "assistant",
-          text:
-            (response.ok
-              ? "Respuesta del servidor:\n"
-              : `Error del servidor (${response.status}):\n`) + textBody,
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
       }
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === processingId ? { ...m, text: responseText } : m
+        )
+      );
     } catch (err) {
-      const assistantMessage = {
-        id: Date.now() + 5,
-        role: "assistant",
-        text:
-          "Ha ocurrido un error procesando la respuesta del servidor LLM: " +
-          (err?.message || "Error desconocido"),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
+      const errorText =
+        "Ha ocurrido un error al conectar con el servidor LLM: " +
+        (err?.message || "Error desconocido");
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === processingId ? { ...m, text: errorText } : m
+        )
+      );
     }
   };
 

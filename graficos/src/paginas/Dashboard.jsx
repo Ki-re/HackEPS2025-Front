@@ -29,7 +29,7 @@ const getClusterColor = (clusterKey) => {
     hash = (hash * 31 + str.charCodeAt(i)) & 0xffffffff;
   }
   const hue = hash % 360;
-  const saturation = 45;
+  const saturation = 80;
   const lightness = 80;
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };

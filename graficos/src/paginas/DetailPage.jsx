@@ -125,6 +125,7 @@ const DetailPage = () => {
                 <span>Memoria (GB)</span>
                 <span>Estado</span>
                 <span>Región</span>
+                <span>IP master</span>
                 <span>Cluster</span>
               </div>
 
@@ -138,6 +139,12 @@ const DetailPage = () => {
                     : "Sin estado";
                 const clusterLabel =
                   inst.cluster_id == null ? "Sin cluster" : inst.cluster_id;
+                const masterIp =
+                  inst.master_ip ||
+                  inst.master_ip_address ||
+                  inst.master_ip_public ||
+                  "";
+                const masterIpUrl = masterIp ? `http://${masterIp}` : null;
 
                 return (
                   <div className="item-row" key={inst.id}>
@@ -166,6 +173,20 @@ const DetailPage = () => {
                     </span>
 
                     <span>{inst.region || "-"}</span>
+
+                    <span>
+                      {masterIpUrl ? (
+                        <a
+                          href={masterIpUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {masterIp}
+                        </a>
+                      ) : (
+                        "-"
+                      )}
+                    </span>
 
                     <span>{clusterLabel}</span>
                   </div>
