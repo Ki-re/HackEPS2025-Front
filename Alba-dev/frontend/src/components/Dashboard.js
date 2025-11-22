@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom'; // 1. Importar useNavigate
 import { useAuth } from '../contexts/AuthContext';
 
 const DashboardContainer = styled.div`
@@ -73,6 +74,35 @@ const LogoutButton = styled.button`
     background: #dc2626;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px -2px rgba(239, 68, 68, 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+// 2. Nou estil per al botó de crear clúster (Verd/Blau per acció positiva)
+const CreateButton = styled.button`
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #10b981; /* Verd maragda */
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  &:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.4);
   }
 
   &:active {
@@ -163,6 +193,7 @@ const FeatureItem = styled.li`
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate(); // 3. Inicialitzar el hook
 
   const handleLogout = () => {
     logout();
@@ -215,6 +246,13 @@ const Dashboard = () => {
             <FeatureItem>Animacions suaus y transicions</FeatureItem>
           </FeatureList>
         </ContentSection>
+
+        {/* 4. Afegir el botó d'acció */}
+        <CreateButton onClick={() => navigate('/create-cluster')}>
+          <span style={{ fontSize: '1.2em', marginRight: '5px' }}>+</span> 
+          Crear Nou Clúster
+        </CreateButton>
+
       </DashboardCard>
     </DashboardContainer>
   );

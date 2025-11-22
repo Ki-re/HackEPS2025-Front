@@ -145,7 +145,7 @@ const authService = {
     const fakeToken = response.data.access_token;
     localStorage.setItem(TOKEN_KEY, fakeToken);
 
-    window.location.href = '/'; // O la pàgina que vulguis anar
+    window.location.href = '/create-cluster';
     
     return { success: true, token: fakeToken };
   },

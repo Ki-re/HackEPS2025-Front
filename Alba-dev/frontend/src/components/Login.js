@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // Treiem 'Link' si no el fem servir
 import { useAuth } from '../contexts/AuthContext';
 
 import {
@@ -24,18 +24,16 @@ const Login = () => {
   });
   const [showRegister, setShowRegister] = useState(false);
   
-  // 1. ESTAT DE REGISTRE ACTUALITZAT: Afegim confirm_password
   const [registerData, setRegisterData] = useState({
     username: '',
     email: '',
     full_name: '',
     password: '',
-    confirm_password: '' // NOU CAMP
+    confirm_password: ''
   });
   
   const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
-  // setAuthError es necessari per mostrar errors de validació local de contrasenya
   const { login, register, error, clearError, loading, setError: setAuthError } = useAuth(); 
 
   useEffect(() => {
@@ -73,15 +71,13 @@ const Login = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setAuthError(null); // Neteja errors abans de la validació local
+    setAuthError(null); 
     
-    // 2. VALIDACIÓ LOCAL: Comprovar que les contrasenyes coincideixen
     if (registerData.password !== registerData.confirm_password) {
       setAuthError("Les contrasenyes no coincideixen.");
       return; 
     }
     
-    // Creem l'objecte de dades a enviar, excloent la confirmació de contrasenya
     const dataToSend = {
       username: registerData.username,
       email: registerData.email,
@@ -94,7 +90,7 @@ const Login = () => {
     if (result.success) {
       setSuccessMessage('¡Registre exitós! Ara pots iniciar sessió.');
       setShowRegister(false);
-      setRegisterData({ // Neteja els camps
+      setRegisterData({
         username: '',
         email: '',
         full_name: '',
@@ -108,9 +104,21 @@ const Login = () => {
     setShowRegister(!showRegister);
     setSuccessMessage('');
     clearError();
-    // Neteja els estats en canviar de mode
     setFormData({ username: '', password: '' });
     setRegisterData({ username: '', email: '', full_name: '', password: '', confirm_password: '' });
+  };
+
+  // Estil per als botons que semblen enllaços
+  const linkButtonStyle = {
+    background: 'none',
+    border: 'none',
+    padding: '0',
+    color: 'inherit',
+    textDecoration: 'underline',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    fontSize: 'inherit',
+    fontWeight: 'bold'
   };
 
   return (
@@ -225,7 +233,6 @@ const Login = () => {
               />
             </FormGroup>
             
-            {/* 3. NOU CAMP: Confirmació de Contrasenya, utilitzant els vostres estils existents */}
             <FormGroup>
               <Label htmlFor="confirm_password">Repetir Contrasenya</Label>
               <Input
@@ -248,11 +255,12 @@ const Login = () => {
 
         <RegisterLink>
           {!showRegister ? (
-            <>¿No tens compte? <a href="#" onClick={toggleMode}>Registra't aquí</a></>
+            <>¿No tens compte? <button type="button" onClick={toggleMode} style={linkButtonStyle}>Registra't aquí</button></>
           ) : (
-            <>¿Ja tens compte? <a href="#" onClick={toggleMode}>Inicia sessió aquí</a></>
+            <>¿Ja tens compte? <button type="button" onClick={toggleMode} style={linkButtonStyle}>Inicia sessió aquí</button></>
           )}
         </RegisterLink>
+
       </LoginCard>
     </LoginContainer>
   );
