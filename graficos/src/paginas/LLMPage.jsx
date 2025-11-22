@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import "./LLMPage.css";
 
 const LLMPage = () => {
@@ -84,39 +85,45 @@ const LLMPage = () => {
 
   return (
     <div className="llm-page">
-      <div className="llm-card">
-        <div className="llm-header">
-          <h2>Asistente LLM</h2>
-          <p className="llm-subtitle">Pregúntame lo que quieras</p>
-        </div>
+      <div className="llm-page-inner">
+        <Link to="/" className="back-link">
+          &larr; Volver al panel
+        </Link>
 
-        <div className="llm-chat">
-          {messages.map((m) => (
-            <div
-              key={m.id}
-              className={
-                m.role === "user"
-                  ? "llm-message llm-message-user"
-                  : "llm-message llm-message-assistant"
-              }
-            >
-              <div className="llm-message-bubble">{m.text}</div>
-            </div>
-          ))}
-        </div>
+        <div className="llm-card">
+          <div className="llm-header">
+            <h2>Asistente LLM</h2>
+            <p className="llm-subtitle">Pregúntame lo que quieras</p>
+          </div>
 
-        <form className="llm-input-row" onSubmit={handleSubmit}>
-          <input
-            className="llm-input"
-            type="text"
-            placeholder="Escribe aquí tu pregunta..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-          />
-          <button className="llm-send-button" type="submit">
-            Enviar
-          </button>
-        </form>
+          <div className="llm-chat">
+            {messages.map((m) => (
+              <div
+                key={m.id}
+                className={
+                  m.role === "user"
+                    ? "llm-message llm-message-user"
+                    : "llm-message llm-message-assistant"
+                }
+              >
+                <div className="llm-message-bubble">{m.text}</div>
+              </div>
+            ))}
+          </div>
+
+          <form className="llm-input-row" onSubmit={handleSubmit}>
+            <input
+              className="llm-input"
+              type="text"
+              placeholder="Escribe aquí tu pregunta..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+            />
+            <button className="llm-send-button" type="submit">
+              Enviar
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

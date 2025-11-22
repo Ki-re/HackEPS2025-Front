@@ -340,7 +340,7 @@ const Dashboard = () => {
                 onClick={() => handleProviderDetail("aws")}
                 aria-label="Ver todas las instancias de AWS"
               >
-                👁
+                +
               </button>
             </div>
             <div className="small-chart">
@@ -359,7 +359,7 @@ const Dashboard = () => {
                 onClick={() => handleProviderDetail("gcp")}
                 aria-label="Ver todas las instancias de GCP"
               >
-                👁
+                +
               </button>
             </div>
             <div className="small-chart">
