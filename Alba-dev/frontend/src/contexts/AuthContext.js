@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authService } from '../services/authService';
+import authService from '../services/authService';
 
 const AuthContext = createContext();
 
@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        const userData = await authService.getCurrentUser();
+        const userData = await authService.fetchUser();
         setUser(userData);
       }
     } catch (error) {
