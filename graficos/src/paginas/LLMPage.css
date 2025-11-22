@@ -1,0 +1,135 @@
+.llm-page {
+  height: 100vh;
+  background-color: #6366f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: #ffffff;
+}
+
+.llm-card {
+  width: 100%;
+  max-width: 900px;
+  height: 100%;
+  max-height: 600px;
+  background-color: rgba(255, 255, 255, 0.98);
+  border-radius: 20px;
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.6);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 20px 16px;
+  box-sizing: border-box;
+  color: #111827;
+}
+
+.llm-header {
+  margin-bottom: 12px;
+}
+
+.llm-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.llm-subtitle {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.llm-chat {
+  flex: 1;
+  border-radius: 14px;
+  background-color: #f3f4ff;
+  padding: 12px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.llm-message {
+  display: flex;
+  max-width: 80%;
+}
+
+.llm-message-assistant {
+  justify-content: flex-start;
+}
+
+.llm-message-user {
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.llm-message-bubble {
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.llm-message-assistant .llm-message-bubble {
+  background-color: #e5e7ff;
+  color: #111827;
+  border-bottom-left-radius: 4px;
+}
+
+.llm-message-user .llm-message-bubble {
+  background-color: #6366f1;
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+
+.llm-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.llm-input {
+  flex: 1;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.llm-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 1px #6366f1;
+}
+
+.llm-send-button {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: none;
+  background-color: #6366f1;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.4);
+  transition: background-color 0.15s ease, transform 0.05s ease,
+    box-shadow 0.15s ease;
+}
+
+.llm-send-button:hover {
+  background-color: #4f46e5;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.5);
+}
+
+.llm-send-button:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.4);
+}

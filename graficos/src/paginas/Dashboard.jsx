@@ -29,7 +29,7 @@ const getClusterColor = (clusterKey) => {
     hash = (hash * 31 + str.charCodeAt(i)) & 0xffffffff;
   }
   const hue = hash % 360;
-  const saturation = 80;
+  const saturation = 45;
   const lightness = 80;
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
@@ -40,6 +40,7 @@ const Dashboard = () => {
   const [instances, setInstances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showCreateOptions, setShowCreateOptions] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -166,6 +167,10 @@ const Dashboard = () => {
     );
   };
 
+  const handleCreateClick = () => {
+    setShowCreateOptions((prev) => !prev);
+  };
+
   const renderPie = (data, { isMain = false, onSliceClick } = {}) => {
     const isEmpty = !data || data.length === 0;
     const pieData = isEmpty ? [{ name: "empty", value: 1 }] : data;
@@ -236,13 +241,40 @@ const Dashboard = () => {
       <div className="charts-row">
         <div className="main-chart-card">
           <div className="main-chart-header">
-            <div className="main-chart-title">
-              <h2 className="card-title">Instancias por cluster</h2>
-            </div>
-            <button className="create-button" onClick={() => {}}>
-              + Crear instancia
-            </button>
-          </div>
+  <div className="main-chart-title">
+    <h2 className="card-title">Instancias por cluster</h2>
+  </div>
+
+  <div className="create-button-wrapper">
+    <button className="create-button" onClick={handleCreateClick}>
+      + Crear instancia
+    </button>
+
+    {showCreateOptions && (
+      <div className="create-options">
+        <button
+          className="create-option-button"
+          onClick={() => {
+            setShowCreateOptions(false);
+            navigate("/crear/manual");
+          }}
+        >
+          Manual
+        </button>
+        <button
+          className="create-option-button"
+          onClick={() => {
+            setShowCreateOptions(false);
+            navigate("/crear/llm");
+          }}
+        >
+          LLM
+        </button>
+      </div>
+    )}
+  </div>
+</div>
+
 
           <div className="main-chart-content">
             <div className="main-chart-pie-column">
@@ -300,9 +332,6 @@ const Dashboard = () => {
         </div>
 
         <div className="small-charts-wrapper">
-          <div className="main-chart-title">
-              <h2 className="small-card-title">Instancias por proveedor</h2>
-          </div>
           <div className="small-chart-block">
             <div className="small-chart-header">
               <h3 className="small-chart-title">AWS</h3>
@@ -311,7 +340,7 @@ const Dashboard = () => {
                 onClick={() => handleProviderDetail("aws")}
                 aria-label="Ver todas las instancias de AWS"
               >
-                +
+                👁
               </button>
             </div>
             <div className="small-chart">
@@ -330,7 +359,7 @@ const Dashboard = () => {
                 onClick={() => handleProviderDetail("gcp")}
                 aria-label="Ver todas las instancias de GCP"
               >
-                +
+                👁
               </button>
             </div>
             <div className="small-chart">

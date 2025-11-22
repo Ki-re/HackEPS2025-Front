@@ -1,5 +1,5 @@
 // src/config/cloudConstants.js
-export const BASE_URL = "http://localhost:8000"; // ⬅️ CAMBIA ESTO
+export const BASE_URL = "http://localhost:8000"; 
 
 // Proveedores soportados por tu API
 export const PROVIDERS = ["aws", "gcp"];
