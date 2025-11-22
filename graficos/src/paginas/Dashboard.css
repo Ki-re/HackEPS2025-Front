@@ -117,17 +117,10 @@
   border-radius: 3px;
 }
 
-.legend-running {
-  background-color: #0088fe;
-}
+.legend-pending { background-color: #f1de63; }
+.legend-running { background-color: #63f1b1; }
+.legend-stopped { background-color: #bdbcb5; }
 
-.legend-pending {
-  background-color: #00c49f;
-}
-
-.legend-stopped {
-  background-color: #ffbb28;
-}
 
 /* Leyenda del gráfico principal, con el mismo estilo que la de la derecha */
 .main-chart-legend {

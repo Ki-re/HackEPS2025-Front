@@ -1,27 +1,30 @@
 // src/pages/DetailPage.jsx
 import { useParams, Link } from "react-router-dom";
+import "./DetailPage.css";
+
+const statusColors = {
+  running: "#0088FE",
+  pending: "#00C49F",
+  stopped: "#FFBB28",
+};
 
 const mockLists = {
   main: [
-    ["Elemento A1", "Elemento A2", "Elemento A3"],
-    ["Elemento B1", "Elemento B2"],
-    ["Elemento C1"],
-    ["Elemento D1", "Elemento D2", "Elemento D3", "Elemento D4"],
+    { title: "Elemento A1", status: "running", group: "Grupo A" },
+    { title: "Elemento A2", status: "pending", group: "Grupo A" },
+    { title: "Elemento A3", status: "stopped", group: "Grupo A" },
   ],
   chart1: [
-    ["UNO-1", "UNO-2"],
-    ["DOS-1", "DOS-2", "DOS-3"],
-    ["TRES-1"],
+    { title: "Servicio 1 - Item 1", status: "running", group: "Servicio 1" },
+    { title: "Servicio 1 - Item 2", status: "pending", group: "Servicio 1" },
   ],
   chart2: [
-    ["X-1", "X-2"],
-    ["Y-1"],
-    ["Z-1", "Z-2"],
+    { title: "Servicio 2 - Item 1", status: "stopped", group: "Servicio 2" },
+    { title: "Servicio 2 - Item 2", status: "running", group: "Servicio 2" },
   ],
   chart3: [
-    ["Rojo-1"],
-    ["Verde-1", "Verde-2"],
-    ["Azul-1", "Azul-2", "Azul-3"],
+    { title: "Servicio 3 - Item 1", status: "pending", group: "Servicio 3" },
+    { title: "Servicio 3 - Item 2", status: "running", group: "Servicio 3" },
   ],
 };
 
@@ -36,28 +39,75 @@ const DetailPage = () => {
   const { chartId, sliceId } = useParams();
   const sliceIndex = Number(sliceId);
 
-  const list =
-    mockLists[chartId] && mockLists[chartId][sliceIndex]
-      ? mockLists[chartId][sliceIndex]
-      : [];
+  // Ahora mismo no usamos sliceIndex para filtrar distinto por quesito,
+  // pero podrías hacerlo fácilmente si lo necesitas.
+  const list = mockLists[chartId] || [];
 
   return (
-    <div style={{ padding: 20, fontFamily: "system-ui" }}>
-      <Link to="/">&larr; Volver al panel</Link>
+    <div className="detail-page">
+      <div className="detail-page-inner">
+        <Link to="/" className="back-link">
+          &larr; Volver al panel
+        </Link>
 
-      <h2>
-        Detalle de {chartNames[chartId] || chartId} – Quesito {sliceIndex + 1}
-      </h2>
+        <div className="detail-card">
+          <div className="detail-card-header">
+            <div>
+              <h2>
+                Detalle de {chartNames[chartId] || chartId} – Quesito{" "}
+                {sliceIndex + 1}
+              </h2>
+              <p className="detail-subtitle">
+                Elementos asociados al segmento seleccionado.
+              </p>
+            </div>
+          </div>
 
-      {list.length === 0 ? (
-        <p>No hay elementos para este quesito.</p>
-      ) : (
-        <ul>
-          {list.map((item, idx) => (
-            <li key={idx}>{item}</li>
-          ))}
-        </ul>
-      )}
+          {list.length === 0 ? (
+            <p className="empty-state">No hay elementos para este quesito.</p>
+          ) : (
+            <div className="items-table">
+              <div className="items-header">
+                <span>Título</span>
+                <span>Estado</span>
+                <span>Grupo</span>
+                <span>Acciones</span>
+              </div>
+
+              {list.map((item, idx) => {
+                const color = statusColors[item.status] || "#999999";
+                const statusLabel =
+                  item.status.charAt(0).toUpperCase() + item.status.slice(1);
+
+                return (
+                  <div className="item-row" key={idx}>
+                    <span className="item-title">{item.title}</span>
+
+                    <span className="item-status">
+                      <span
+                        className="status-dot"
+                        style={{ backgroundColor: color }}
+                      />
+                      <span>{statusLabel}</span>
+                    </span>
+
+                    <span className="item-group">{item.group}</span>
+
+                    <span className="item-actions">
+                      <button
+                        className="edit-button"
+                        onClick={() => console.log("Editar", item)}
+                      >
+                        Editar
+                      </button>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

@@ -7,9 +7,17 @@ import {
   Cell,
   ResponsiveContainer,
 } from "recharts";
-import "./Dashboard.css"; // opcional
+import "./Dashboard.css";
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28"];
+// Colores para el gráfico principal (Grupos A–C)
+const MAIN_COLORS = ["#63eaf1", "#63a8f1", "#6366f1"];
+
+// Colores para los estados de los gráficos pequeños
+const STATUS_COLORS = {
+  Pending: "#f1de63",
+  Running: "#63f1b1",
+  Stopped: "#bdbcb5",
+};
 
 // Datos de ejemplo
 const mainChartData = [
@@ -18,22 +26,10 @@ const mainChartData = [
   { name: "Grupo C", value: 300 },
 ];
 
-const smallChart1Data = [
+const smallChartData = [
   { name: "Running", value: 100 },
   { name: "Pending", value: 200 },
   { name: "Stopped", value: 50 },
-];
-
-const smallChart2Data = [
-  { name: "Running", value: 150 },
-  { name: "Pending", value: 80 },
-  { name: "Stopped", value: 120 },
-];
-
-const smallChart3Data = [
-  { name: "Running", value: 90 },
-  { name: "Pending", value: 60 },
-  { name: "Stopped", value: 110 },
 ];
 
 const Dashboard = () => {
@@ -43,37 +39,43 @@ const Dashboard = () => {
     navigate(`/detalle/${chartId}/${sliceIndex}`);
   };
 
-// ya no hace falta importar Legend desde "recharts"
-const renderPie = (data, chartId, { isMain = false } = {}) => (
-  <ResponsiveContainer width="100%" height="100%">
-    <PieChart
-      margin={
-        isMain
-          ? { top: 0, right: 0, bottom: 0, left: 0 }
-          : { top: 10, right: 10, bottom: 10, left: 10 }
-      }
-    >
-      <Pie
-        data={data}
-        dataKey="value"
-        nameKey="name"
-        cx="50%"
-        cy="50%"                 // fuerza el centro geométrico
-        outerRadius={isMain ? 190 : 50}
-        onClick={(_, index) => handleSliceClick(chartId, index)}
+  // Render genérico de pastel
+  const renderPie = (data, chartId, { isMain = false } = {}) => (
+    <ResponsiveContainer width="100%" height="100%">
+      <PieChart
+        margin={
+          isMain
+            ? { top: 0, right: 0, bottom: 0, left: 0 }
+            : { top: 10, right: 10, bottom: 10, left: 10 }
+        }
       >
-        {data.map((entry, index) => (
-          <Cell
-            key={`cell-${index}`}
-            fill={COLORS[index % COLORS.length]}
-            style={{ cursor: "pointer" }}
-          />
-        ))}
-      </Pie>
-      <Tooltip />
-    </PieChart>
-  </ResponsiveContainer>
-);
+        <Pie
+          data={data}
+          dataKey="value"
+          nameKey="name"
+          cx="50%"
+          cy="50%"
+          outerRadius={isMain ? 190 : 50}
+          onClick={(_, index) => handleSliceClick(chartId, index)}
+        >
+          {data.map((entry, index) => {
+            const fillColor = isMain
+              ? MAIN_COLORS[index % MAIN_COLORS.length] // principal
+              : STATUS_COLORS[entry.name] || "#999999"; // pequeños por estado
+
+            return (
+              <Cell
+                key={`cell-${index}`}
+                fill={fillColor}
+                style={{ cursor: "pointer" }}
+              />
+            );
+          })}
+        </Pie>
+        <Tooltip />
+      </PieChart>
+    </ResponsiveContainer>
+  );
 
   return (
     <div className="dashboard-container">
@@ -88,22 +90,32 @@ const renderPie = (data, chartId, { isMain = false } = {}) => (
             {renderPie(mainChartData, "main", { isMain: true })}
           </div>
 
-          {/* Leyenda del principal con el mismo estilo flex */}
+          {/* Leyenda del principal con los mismos colores MAIN_COLORS */}
           <div className="main-chart-legend">
             <div className="legend-item">
-              <span className="legend-color" style={{ backgroundColor: COLORS[0] }} />
+              <span
+                className="legend-color"
+                style={{ backgroundColor: MAIN_COLORS[0] }}
+              />
               <span>Grupo A</span>
             </div>
             <div className="legend-item">
-              <span className="legend-color" style={{ backgroundColor: COLORS[1] }} />
+              <span
+                className="legend-color"
+                style={{ backgroundColor: MAIN_COLORS[1] }}
+              />
               <span>Grupo B</span>
             </div>
             <div className="legend-item">
-              <span className="legend-color" style={{ backgroundColor: COLORS[2] }} />
+              <span
+                className="legend-color"
+                style={{ backgroundColor: MAIN_COLORS[2] }}
+              />
               <span>Grupo C</span>
             </div>
           </div>
         </div>
+
         {/* Derecha: 3 gráficos pequeños en columna */}
         <div className="small-charts-wrapper">
           <div className="small-charts-legend">
@@ -120,24 +132,25 @@ const renderPie = (data, chartId, { isMain = false } = {}) => (
               <span>Stopped</span>
             </div>
           </div>
+
           <div className="small-chart-block">
             <h3 className="small-chart-title">Servicio 1</h3>
             <div className="small-chart">
-              {renderPie(smallChart1Data, "chart1")}
+              {renderPie(smallChartData, "chart1")}
             </div>
           </div>
 
           <div className="small-chart-block">
             <h3 className="small-chart-title">Servicio 2</h3>
             <div className="small-chart">
-              {renderPie(smallChart2Data, "chart2")}
+              {renderPie(smallChartData, "chart2")}
             </div>
           </div>
 
           <div className="small-chart-block">
             <h3 className="small-chart-title">Servicio 3</h3>
             <div className="small-chart">
-              {renderPie(smallChart3Data, "chart3")}
+              {renderPie(smallChartData, "chart3")}
             </div>
           </div>
         </div>
