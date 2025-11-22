@@ -9,15 +9,6 @@ const LoginContainer = styled.div`
   justify-content: center;
   min-height: 100vh;
   padding: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  background-size: 400% 400%;
-  animation: gradientShift 15s ease infinite;
-
-  @keyframes gradientShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
 `;
 
 const LoginCard = styled.div`
@@ -30,16 +21,6 @@ const LoginCard = styled.div`
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.2);
   animation: fadeIn 0.5s ease-out;
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
   }
 `;
 
@@ -109,7 +90,7 @@ const Input = styled.input`
 
 const Button = styled.button`
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: #6366f1;
   color: white;
   border: none;
   border-radius: 12px;
@@ -123,6 +104,8 @@ const Button = styled.button`
   gap: 0.5rem;
 
   &:hover:not(:disabled) {
+    /* Per mantenir l'efecte hover, pots enfosquir lleugerament el color */
+    background: #4f46e5;
     transform: translateY(-1px);
     box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
   }
@@ -203,15 +186,20 @@ const Login = () => {
     password: ''
   });
   const [showRegister, setShowRegister] = useState(false);
+  
+  // 1. ESTAT DE REGISTRE ACTUALITZAT: Afegim confirm_password
   const [registerData, setRegisterData] = useState({
     username: '',
     email: '',
     full_name: '',
-    password: ''
+    password: '',
+    confirm_password: '' // NOU CAMP
   });
+  
   const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
-  const { login, register, error, clearError, loading } = useAuth();
+  // setAuthError es necessari per mostrar errors de validació local de contrasenya
+  const { login, register, error, clearError, loading, setError: setAuthError } = useAuth(); 
 
   useEffect(() => {
     if (successMessage) {
@@ -231,7 +219,7 @@ const Login = () => {
       }));
     } else {
       setFormData(prev => ({
-        ...prev,
+        ...prev,  
         [name]: value
       }));
     }
@@ -248,15 +236,33 @@ const Login = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    const result = await register(registerData);
+    setAuthError(null); // Neteja errors abans de la validació local
+    
+    // 2. VALIDACIÓ LOCAL: Comprovar que les contrasenyes coincideixen
+    if (registerData.password !== registerData.confirm_password) {
+      setAuthError("Les contrasenyes no coincideixen.");
+      return; 
+    }
+    
+    // Creem l'objecte de dades a enviar, excloent la confirmació de contrasenya
+    const dataToSend = {
+      username: registerData.username,
+      email: registerData.email,
+      full_name: registerData.full_name,
+      password: registerData.password,
+    };
+    
+    const result = await register(dataToSend);
+    
     if (result.success) {
-      setSuccessMessage('¡Registro exitoso! Ahora puedes iniciar sesión.');
+      setSuccessMessage('¡Registre exitós! Ara pots iniciar sessió.');
       setShowRegister(false);
-      setRegisterData({
+      setRegisterData({ // Neteja els camps
         username: '',
         email: '',
         full_name: '',
-        password: ''
+        password: '',
+        confirm_password: ''
       });
     }
   };
@@ -265,18 +271,16 @@ const Login = () => {
     setShowRegister(!showRegister);
     setSuccessMessage('');
     clearError();
-    if (!showRegister) {
-      setFormData({ username: '', password: '' });
-    } else {
-      setRegisterData({ username: '', email: '', full_name: '', password: '' });
-    }
+    // Neteja els estats en canviar de mode
+    setFormData({ username: '', password: '' });
+    setRegisterData({ username: '', email: '', full_name: '', password: '', confirm_password: '' });
   };
 
   return (
     <LoginContainer>
       <LoginCard>
         <Logo>
-          <h1>Login</h1>
+          <h1>ALAE Multi-Cloud</h1>
           <p>Benvingut/da a la teva aplicació</p>
         </Logo>
 
@@ -302,7 +306,7 @@ const Login = () => {
                 name="username"
                 value={formData.username}
                 onChange={handleInputChange}
-                placeholder="Ingresa tu usuario"
+                placeholder="Ingressa el teu usuari"
                 required
                 disabled={loading}
               />
@@ -316,14 +320,14 @@ const Login = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                placeholder="Ingresa tu contraseña"
+                placeholder="Ingressa la teva contrasenya"
                 required
                 disabled={loading}
               />
             </FormGroup>
 
             <Button type="submit" disabled={loading}>
-              {loading ? <LoadingSpinner /> : 'Iniciar Sesión'}
+              {loading ? <LoadingSpinner /> : 'Inicia Sessió'}
             </Button>
           </Form>
         ) : (
@@ -336,7 +340,7 @@ const Login = () => {
                 name="username"
                 value={registerData.username}
                 onChange={handleInputChange}
-                placeholder="Elige un usuario"
+                placeholder="Escull un usuari"
                 required
                 disabled={loading}
               />
@@ -350,7 +354,7 @@ const Login = () => {
                 name="email"
                 value={registerData.email}
                 onChange={handleInputChange}
-                placeholder="Ingresa tu email"
+                placeholder="Ingressa el teu email"
                 required
                 disabled={loading}
               />
@@ -364,7 +368,7 @@ const Login = () => {
                 name="full_name"
                 value={registerData.full_name}
                 onChange={handleInputChange}
-                placeholder="Ingresa tu nombre completo"
+                placeholder="Ingressa el teu nom complet"
                 required
                 disabled={loading}
               />
@@ -378,12 +382,27 @@ const Login = () => {
                 name="password"
                 value={registerData.password}
                 onChange={handleInputChange}
-                placeholder="Crea una contraseña"
+                placeholder="Crea una contrasenya"
                 required
                 disabled={loading}
               />
             </FormGroup>
-
+            
+            {/* 3. NOU CAMP: Confirmació de Contrasenya, utilitzant els vostres estils existents */}
+            <FormGroup>
+              <Label htmlFor="confirm_password">Repetir Contrasenya</Label>
+              <Input
+                type="password"
+                id="confirm_password"
+                name="confirm_password" 
+                value={registerData.confirm_password}
+                onChange={handleInputChange}
+                placeholder="Repeteix la contrasenya"
+                required
+                disabled={loading}
+              />
+            </FormGroup>
+            
             <Button type="submit" disabled={loading}>
               {loading ? <LoadingSpinner /> : 'Registrar-se'}
             </Button>
