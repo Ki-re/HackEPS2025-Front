@@ -5,7 +5,6 @@ import styled from 'styled-components';
 
 // --- 0. TEMPLATES DE DOCKER COMPOSE ---
 const DOCKER_TEMPLATES = {
-  // 1. CORRECCIÓ: Canviat de bgynx a nginx
   nginx: `version: '3'
 services:
   web:
@@ -13,13 +12,32 @@ services:
     ports:
       - "80:80"`,
   
-  dummy: `version: '3'
+  dummy: `version: "3.9"
 services:
-  dummy-service:
-    image: busybox
-    command: echo "Aquest és el dummy service per defecte"
+  dummy-app-controller:
+    image: rsprat/dummy-rest-app-controller:v1
+    ports:
+      - "30008:8000"
+    environment:
+      report_metrics_to_ems: "False"
     deploy:
-      replicas: 1`
+      replicas: 1
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "1024M"
+  dummy-app-worker:
+    image: rsprat/dummy-rest-app-worker:v1
+    environment:
+      API_ADDRESS: "http://dummy-app-controller:8000"
+    depends_on:
+      - dummy-app-controller
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "1024M"`
 };
 
 // --- 1. DEFINICIÓ D'ESTILS ---
@@ -208,7 +226,6 @@ const CreateCluster = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // 2. CORRECCIÓ: Estat inicial ara és 'nginx'
   const [composeMode, setComposeMode] = useState('nginx');
 
   const [formData, setFormData] = useState({
@@ -217,7 +234,7 @@ const CreateCluster = () => {
     cluster_type: 'docker-swarm',
     provider: 'aws',
     n_instances: 1,
-    docker_compose: DOCKER_TEMPLATES.nginx, // 3. CORRECCIÓ: Càrrega inicial amb nginx
+    docker_compose: DOCKER_TEMPLATES.nginx, 
     instance_type: 'micro',
     network_config: {}
   });
@@ -235,10 +252,16 @@ const CreateCluster = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'n_instances' ? parseInt(value) || 0 : value
-    }));
+
+    // LÒGICA PER LIMITAR A 8 INSTÀNCIES
+    if (name === 'n_instances') {
+      const val = parseInt(value) || 0;
+      // Si és més gran que 8, simplement no actualitzem (l'usuari no pot pujar més)
+      if (val > 8) return; 
+      setFormData(prev => ({ ...prev, [name]: val }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -328,13 +351,15 @@ const CreateCluster = () => {
 
           <Row>
             <FormGroup>
-              <Label>Nombre d'Instàncies</Label>
+              {/* Etiqueta actualitzada amb l'avís del màxim */}
+              <Label>Nombre d'Instàncies (Màx. 8)</Label>
               <Input 
                 type="number" 
                 name="n_instances" 
                 value={formData.n_instances} 
                 onChange={handleChange} 
                 min="1" 
+                max="8" // Límit HTML5
               />
             </FormGroup>
 
@@ -359,7 +384,6 @@ const CreateCluster = () => {
               value={composeMode} 
               onChange={handleComposeModeChange}
             >
-              {/* 4. CORRECCIÓ: Opció nginx corregida */}
               <option value="nginx">Nginx</option>
               <option value="dummy">Dummy</option>
               <option value="custom">Custom</option>
