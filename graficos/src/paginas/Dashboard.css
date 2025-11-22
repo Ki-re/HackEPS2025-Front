@@ -100,6 +100,7 @@
 .small-charts-legend {
   margin-top: 4px;
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 12px;
   font-size: 0.8rem;

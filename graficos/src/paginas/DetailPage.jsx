@@ -8,7 +8,7 @@ import { STATUS_COLORS } from "../config/cloudConstants";
 const DetailPage = () => {
   const { mode, provider, status } = useParams();
   // mode: "provider" | "status"
-  // provider: "aws" | "gcp" | "edge"
+  // provider: "aws" | "gcp" | "clouding"
   // status: "pending" | "running" | ...
 
   const [items, setItems] = useState([]);
@@ -64,10 +64,18 @@ const DetailPage = () => {
   return (
     <div className="detail-page">
       <div className="detail-page-inner">
-        <Link to="/" className="back-link">
-          &larr; Volver al panel
-        </Link>
+        <div className="detail-top-bar">
+          <Link to="/" className="back-link">
+            &larr; Volver al panel
+          </Link>
 
+          <button
+            className="create-button"
+            onClick={() => {}}
+          >
+            + Crear instancia
+          </button>
+        </div>
         <div className="detail-card">
           <div className="detail-card-header">
             <div>
@@ -93,14 +101,12 @@ const DetailPage = () => {
           {!loading && !error && items.length > 0 && (
             <div className="items-table">
               <div className="items-header">
-                <span>Nombre</span>
-                <span>Proveedor</span>
+                <span>Nombre / CPU</span>
+                <span>Proveedor / Memoria (GB)</span>
                 <span>Estado</span>
                 <span>Región</span>
-                <span>CPU</span>
-                <span>Memoria (GB)</span>
+                <span>Acciones</span>
               </div>
-
               {items.map((inst) => {
                 const statusKey = (inst.status || "").toLowerCase();
                 const color = STATUS_COLORS[statusKey] || "#999999";
@@ -110,9 +116,17 @@ const DetailPage = () => {
 
                 return (
                   <div className="item-row" key={inst.id}>
-                    <span className="item-title">{inst.name}</span>
-                    <span>{inst.provider?.toUpperCase() || "-"}</span>
+                    {/* Nombre - CPU */}
+                    <span className="item-title">
+                      {inst.name || "-"} - {inst.cpu_cores ?? "-"}
+                    </span>
 
+                    {/* Proveedor - Memoria */}
+                    <span>
+                      {(inst.provider || "-").toUpperCase()} - {inst.memory_gb ?? "-"}
+                    </span>
+
+                    {/* Estado */}
                     <span className="item-status">
                       <span
                         className="status-dot"
@@ -121,9 +135,18 @@ const DetailPage = () => {
                       <span>{statusLabel}</span>
                     </span>
 
+                    {/* Región */}
                     <span>{inst.region || "-"}</span>
-                    <span>{inst.cpu_cores}</span>
-                    <span>{inst.memory_gb}</span>
+
+                    {/* Botón editar (de momento sin lógica) */}
+                    <span className="item-actions">
+                      <button
+                        className="edit-button"
+                        onClick={() => {}}
+                      >
+                        Editar
+                      </button>
+                    </span>
                   </div>
                 );
               })}

@@ -234,7 +234,7 @@ const Dashboard = () => {
           </div>
 
           <div className="small-chart-block">
-            <h3 className="small-chart-title">Edge</h3>
+            <h3 className="small-chart-title">Clouding</h3>
             <div className="small-chart">
               {renderPie(smallChartsData.edge, {
                 onSliceClick: (item) =>
