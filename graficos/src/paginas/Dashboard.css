@@ -1,22 +1,140 @@
-/* src/pages/Dashboard.css */
 .dashboard-container {
-  padding: 20px;
+  height: 100vh; /* ocupa toda la pantalla */
+  background-color: #6366f1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 32px;
+  box-sizing: border-box;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
+  color: #ffffff;
 }
 
-.main-chart {
+.dashboard-container h1 {
+  margin: 0 0 16px 0;
+}
+
+/* Fila principal: panel grande + panel pequeño, misma altura */
+.charts-row {
   width: 100%;
-  height: 300px;
-  margin-bottom: 30px;
-}
-
-.small-charts-row {
+  max-width: 1400px;
   display: flex;
   gap: 20px;
+  align-items: stretch; /* 🔹 misma altura para las dos tarjetas */
+  flex: 1;              /* ocupa todo el alto que queda bajo el título */
+}
+
+/* Panel grande izquierda */
+.main-chart-card {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 24px;
+  flex: 4;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  color: #000;
+  position: relative;          /* ⬅️ para poder posicionar el título encima */
+  display: flex;
+  flex-direction: column;      /* ⬅️ título (absoluto) + gráfico + leyenda */
+  align-items: stretch;
+  box-sizing: border-box;
+}
+
+/* Título del principal: flotando en la esquina, ya no afecta al centro */
+.main-chart-title {
+  position: absolute;
+  top: 20px;
+  left: 24px;
+}
+
+.card-title {
+  margin: 0;
+}
+
+/* Zona del gráfico principal: ocupa todo el espacio y centra el pie */
+.main-chart {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;       /* centra vertical */
+  justify-content: center;   /* centra horizontal */
+  padding: 40px 16px 48px;   /* aire arriba (título) y abajo (leyenda) */
+}
+
+/* Panel pequeño derecha */
+.small-charts-wrapper {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 16px;
+  flex: 1;           /* bastante más estrecho */
+  max-width: 260px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  color: #000;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+/* Cada bloque pequeño (título + gráfico) */
+.small-chart-block {
+  flex: 1;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
 }
 
 .small-chart {
   flex: 1;
-  height: 200px;
+}
+
+/* Títulos de los pequeños */
+.small-chart-title {
+  margin: 0 0 4px 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Legend común de los pequeños */
+.small-charts-legend {
+  margin-top: 4px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  font-size: 0.8rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.legend-running {
+  background-color: #0088fe;
+}
+
+.legend-pending {
+  background-color: #00c49f;
+}
+
+.legend-stopped {
+  background-color: #ffbb28;
+}
+
+/* Leyenda del gráfico principal, con el mismo estilo que la de la derecha */
+.main-chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  font-size: 0.8rem;
+  margin-top: -8px;          /* lo acercamos un poco al gráfico */
+  padding-bottom: 4px;
 }
