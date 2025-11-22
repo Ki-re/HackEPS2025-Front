@@ -1,47 +1,65 @@
 // src/pages/DetailPage.jsx
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import "./DetailPage.css";
-
-const statusColors = {
-  running: "#0088FE",
-  pending: "#00C49F",
-  stopped: "#FFBB28",
-};
-
-const mockLists = {
-  main: [
-    { title: "Elemento A1", status: "running", group: "Grupo A" },
-    { title: "Elemento A2", status: "pending", group: "Grupo A" },
-    { title: "Elemento A3", status: "stopped", group: "Grupo A" },
-  ],
-  chart1: [
-    { title: "Servicio 1 - Item 1", status: "running", group: "Servicio 1" },
-    { title: "Servicio 1 - Item 2", status: "pending", group: "Servicio 1" },
-  ],
-  chart2: [
-    { title: "Servicio 2 - Item 1", status: "stopped", group: "Servicio 2" },
-    { title: "Servicio 2 - Item 2", status: "running", group: "Servicio 2" },
-  ],
-  chart3: [
-    { title: "Servicio 3 - Item 1", status: "pending", group: "Servicio 3" },
-    { title: "Servicio 3 - Item 2", status: "running", group: "Servicio 3" },
-  ],
-};
-
-const chartNames = {
-  main: "Gráfico principal",
-  chart1: "Gráfico pequeño 1",
-  chart2: "Gráfico pequeño 2",
-  chart3: "Gráfico pequeño 3",
-};
+import { fetchInstances } from "../api/client";
+import { STATUS_COLORS } from "../config/cloudConstants";
 
 const DetailPage = () => {
-  const { chartId, sliceId } = useParams();
-  const sliceIndex = Number(sliceId);
+  const { mode, provider, status } = useParams();
+  // mode: "provider" | "status"
+  // provider: "aws" | "gcp" | "edge"
+  // status: "pending" | "running" | ...
 
-  // Ahora mismo no usamos sliceIndex para filtrar distinto por quesito,
-  // pero podrías hacerlo fácilmente si lo necesitas.
-  const list = mockLists[chartId] || [];
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const allInstances = await fetchInstances();
+
+        let filtered = allInstances;
+
+        if (mode === "provider" && provider) {
+          filtered = filtered.filter(
+            (i) => (i.provider || "").toLowerCase() === provider.toLowerCase()
+          );
+        }
+
+        if (mode === "status" && provider && status) {
+          filtered = filtered.filter(
+            (i) =>
+              (i.provider || "").toLowerCase() === provider.toLowerCase() &&
+              (i.status || "").toLowerCase() === status.toLowerCase()
+          );
+        }
+
+        setItems(filtered);
+      } catch (err) {
+        console.error(err);
+        setError(err.message || "Error desconocido");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [mode, provider, status]);
+
+  const getTitle = () => {
+    if (mode === "provider") {
+      return `Instancias en ${provider?.toUpperCase()}`;
+    }
+    if (mode === "status") {
+      return `Instancias ${status} en ${provider?.toUpperCase()}`;
+    }
+    return "Detalle";
+  };
 
   return (
     <div className="detail-page">
@@ -53,35 +71,47 @@ const DetailPage = () => {
         <div className="detail-card">
           <div className="detail-card-header">
             <div>
-              <h2>
-                Detalle de {chartNames[chartId] || chartId} – Quesito{" "}
-                {sliceIndex + 1}
-              </h2>
+              <h2>{getTitle()}</h2>
               <p className="detail-subtitle">
-                Elementos asociados al segmento seleccionado.
+                Lista de instancias según el segmento seleccionado.
               </p>
             </div>
           </div>
 
-          {list.length === 0 ? (
-            <p className="empty-state">No hay elementos para este quesito.</p>
-          ) : (
+          {loading && <p className="empty-state">Cargando instancias...</p>}
+
+          {error && !loading && (
+            <p className="empty-state">Error: {error}</p>
+          )}
+
+          {!loading && !error && items.length === 0 && (
+            <p className="empty-state">
+              No hay instancias que cumplan este filtro.
+            </p>
+          )}
+
+          {!loading && !error && items.length > 0 && (
             <div className="items-table">
               <div className="items-header">
-                <span>Título</span>
+                <span>Nombre</span>
+                <span>Proveedor</span>
                 <span>Estado</span>
-                <span>Grupo</span>
-                <span>Acciones</span>
+                <span>Región</span>
+                <span>CPU</span>
+                <span>Memoria (GB)</span>
               </div>
 
-              {list.map((item, idx) => {
-                const color = statusColors[item.status] || "#999999";
+              {items.map((inst) => {
+                const statusKey = (inst.status || "").toLowerCase();
+                const color = STATUS_COLORS[statusKey] || "#999999";
                 const statusLabel =
-                  item.status.charAt(0).toUpperCase() + item.status.slice(1);
+                  inst.status?.charAt(0).toUpperCase() +
+                    inst.status?.slice(1) || "Sin estado";
 
                 return (
-                  <div className="item-row" key={idx}>
-                    <span className="item-title">{item.title}</span>
+                  <div className="item-row" key={inst.id}>
+                    <span className="item-title">{inst.name}</span>
+                    <span>{inst.provider?.toUpperCase() || "-"}</span>
 
                     <span className="item-status">
                       <span
@@ -91,16 +121,9 @@ const DetailPage = () => {
                       <span>{statusLabel}</span>
                     </span>
 
-                    <span className="item-group">{item.group}</span>
-
-                    <span className="item-actions">
-                      <button
-                        className="edit-button"
-                        onClick={() => console.log("Editar", item)}
-                      >
-                        Editar
-                      </button>
-                    </span>
+                    <span>{inst.region || "-"}</span>
+                    <span>{inst.cpu_cores}</span>
+                    <span>{inst.memory_gb}</span>
                   </div>
                 );
               })}

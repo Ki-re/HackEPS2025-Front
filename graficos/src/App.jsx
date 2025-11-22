@@ -8,7 +8,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/detalle/:chartId/:sliceId" element={<DetailPage />} />
+        <Route path="/detalle/:mode/:provider" element={<DetailPage />} />
+        <Route path="/detalle/:mode/:provider/:status" element={<DetailPage />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,4 +1,5 @@
 // src/pages/Dashboard.jsx
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   PieChart,
@@ -8,39 +9,105 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import "./Dashboard.css";
-
-// Colores para el gráfico principal (Grupos A–C)
-const MAIN_COLORS = ["#63eaf1", "#63a8f1", "#6366f1"];
-
-// Colores para los estados de los gráficos pequeños
-const STATUS_COLORS = {
-  Pending: "#f1de63",
-  Running: "#63f1b1",
-  Stopped: "#bdbcb5",
-};
-
-// Datos de ejemplo
-const mainChartData = [
-  { name: "Grupo A", value: 400 },
-  { name: "Grupo B", value: 300 },
-  { name: "Grupo C", value: 300 },
-];
-
-const smallChartData = [
-  { name: "Running", value: 100 },
-  { name: "Pending", value: 200 },
-  { name: "Stopped", value: 50 },
-];
+import { fetchInstances } from "../api/client";
+import {
+  PROVIDERS,
+  STATUSES,
+  MAIN_COLORS,
+  STATUS_COLORS,
+} from "../config/cloudConstants";
 
 const Dashboard = () => {
   const navigate = useNavigate();
 
-  const handleSliceClick = (chartId, sliceIndex) => {
-    navigate(`/detalle/${chartId}/${sliceIndex}`);
+  const [instances, setInstances] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // 1. Cargar instancias desde la API
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fetchInstances();
+        setInstances(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error(err);
+        setError(err.message || "Error desconocido");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
+  // 2. Datos para el gráfico principal: nº de instancias por proveedor
+  const mainChartData = useMemo(() => {
+    const counts = Object.fromEntries(PROVIDERS.map((p) => [p, 0]));
+
+    instances.forEach((inst) => {
+      const provider = (inst.provider || "").toLowerCase();
+      if (counts[provider] !== undefined) {
+        counts[provider] += 1;
+      }
+    });
+
+    return PROVIDERS
+      .map((p) => ({
+        name: p.toUpperCase(),
+        provider: p,
+        value: counts[p],
+      }))
+      .filter((item) => item.value > 0);
+  }, [instances]);
+
+  // 3. Datos para los gráficos pequeños: distribución de estados por proveedor
+  const smallChartsData = useMemo(() => {
+    // Inicializamos contadores
+    const baseStatusCounts = () =>
+      Object.fromEntries(STATUSES.map((s) => [s, 0]));
+
+    const byProviderStatus = Object.fromEntries(
+      PROVIDERS.map((p) => [p, baseStatusCounts()])
+    );
+
+    instances.forEach((inst) => {
+      const provider = (inst.provider || "").toLowerCase();
+      const status = (inst.status || "").toLowerCase();
+
+      if (!byProviderStatus[provider]) return;
+      if (!byProviderStatus[provider][status] && byProviderStatus[provider][status] !== 0) return;
+
+      byProviderStatus[provider][status] += 1;
+    });
+
+    const toPieData = (statusCounts) =>
+      STATUSES.map((s) => ({
+        name: s, // nombre = estado
+        value: statusCounts[s],
+      })).filter((item) => item.value > 0);
+
+    return {
+      aws: toPieData(byProviderStatus.aws),
+      gcp: toPieData(byProviderStatus.gcp),
+      edge: toPieData(byProviderStatus.edge),
+    };
+  }, [instances]);
+
+  // 4. Navegación al detalle:
+  // - En el gráfico principal: detalle por proveedor
+  // - En los pequeños: detalle por proveedor + estado
+  const handleMainSliceClick = (provider) => {
+    navigate(`/detalle/provider/${provider}`);
   };
 
-  // Render genérico de pastel
-  const renderPie = (data, chartId, { isMain = false } = {}) => (
+  const handleSmallSliceClick = (provider, status) => {
+    navigate(`/detalle/status/${provider}/${status}`);
+  };
+
+  const renderPie = (data, { isMain = false, onSliceClick }) => (
     <ResponsiveContainer width="100%" height="100%">
       <PieChart
         margin={
@@ -56,12 +123,17 @@ const Dashboard = () => {
           cx="50%"
           cy="50%"
           outerRadius={isMain ? 190 : 50}
-          onClick={(_, index) => handleSliceClick(chartId, index)}
+          onClick={(entry, index) => {
+            if (!onSliceClick) return;
+            const item = data[index];
+            if (!item) return;
+            onSliceClick(item);
+          }}
         >
           {data.map((entry, index) => {
             const fillColor = isMain
-              ? MAIN_COLORS[index % MAIN_COLORS.length] // principal
-              : STATUS_COLORS[entry.name] || "#999999"; // pequeños por estado
+              ? MAIN_COLORS[index % MAIN_COLORS.length]
+              : STATUS_COLORS[entry.name] || "#999999";
 
             return (
               <Cell
@@ -77,80 +149,97 @@ const Dashboard = () => {
     </ResponsiveContainer>
   );
 
+  if (loading) {
+    return (
+      <div className="dashboard-container">
+        <p>Cargando datos...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dashboard-container">
+        <p>Error cargando datos: {error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-container">
       <div className="charts-row">
-        {/* Izquierda: gráfico principal */}
+        {/* Gráfico principal */}
         <div className="main-chart-card">
           <div className="main-chart-title">
-            <h2 className="card-title">Estado general</h2>
+            <h2 className="card-title">Instancias por proveedor</h2>
           </div>
 
           <div className="main-chart">
-            {renderPie(mainChartData, "main", { isMain: true })}
+            {renderPie(mainChartData, {
+              isMain: true,
+              onSliceClick: (item) => handleMainSliceClick(item.provider),
+            })}
           </div>
 
-          {/* Leyenda del principal con los mismos colores MAIN_COLORS */}
+          {/* Leyenda principal */}
           <div className="main-chart-legend">
-            <div className="legend-item">
-              <span
-                className="legend-color"
-                style={{ backgroundColor: MAIN_COLORS[0] }}
-              />
-              <span>Grupo A</span>
-            </div>
-            <div className="legend-item">
-              <span
-                className="legend-color"
-                style={{ backgroundColor: MAIN_COLORS[1] }}
-              />
-              <span>Grupo B</span>
-            </div>
-            <div className="legend-item">
-              <span
-                className="legend-color"
-                style={{ backgroundColor: MAIN_COLORS[2] }}
-              />
-              <span>Grupo C</span>
-            </div>
+            {mainChartData.map((item, index) => (
+              <div className="legend-item" key={item.provider}>
+                <span
+                  className="legend-color"
+                  style={{
+                    backgroundColor:
+                      MAIN_COLORS[index % MAIN_COLORS.length],
+                  }}
+                />
+                <span>{item.name}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Derecha: 3 gráficos pequeños en columna */}
+        {/* Gráficos pequeños por proveedor */}
         <div className="small-charts-wrapper">
+          {/* Leyenda de estados (con terminated y error) */}
           <div className="small-charts-legend">
-            <div className="legend-item">
-              <span className="legend-color legend-pending" />
-              <span>Pending</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-color legend-running" />
-              <span>Running</span>
-            </div>
-            <div className="legend-item">
-              <span className="legend-color legend-stopped" />
-              <span>Stopped</span>
+            {STATUSES.map((status) => (
+              <div className="legend-item" key={status}>
+                <span
+                  className="legend-color"
+                  style={{ backgroundColor: STATUS_COLORS[status] }}
+                />
+                <span>{status}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="small-chart-block">
+            <h3 className="small-chart-title">AWS</h3>
+            <div className="small-chart">
+              {renderPie(smallChartsData.aws, {
+                onSliceClick: (item) =>
+                  handleSmallSliceClick("aws", item.name),
+              })}
             </div>
           </div>
 
           <div className="small-chart-block">
-            <h3 className="small-chart-title">Servicio 1</h3>
+            <h3 className="small-chart-title">GCP</h3>
             <div className="small-chart">
-              {renderPie(smallChartData, "chart1")}
+              {renderPie(smallChartsData.gcp, {
+                onSliceClick: (item) =>
+                  handleSmallSliceClick("gcp", item.name),
+              })}
             </div>
           </div>
 
           <div className="small-chart-block">
-            <h3 className="small-chart-title">Servicio 2</h3>
+            <h3 className="small-chart-title">Edge</h3>
             <div className="small-chart">
-              {renderPie(smallChartData, "chart2")}
-            </div>
-          </div>
-
-          <div className="small-chart-block">
-            <h3 className="small-chart-title">Servicio 3</h3>
-            <div className="small-chart">
-              {renderPie(smallChartData, "chart3")}
+              {renderPie(smallChartsData.edge, {
+                onSliceClick: (item) =>
+                  handleSmallSliceClick("edge", item.name),
+              })}
             </div>
           </div>
         </div>
