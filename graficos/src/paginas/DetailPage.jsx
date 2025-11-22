@@ -1,15 +1,13 @@
-// src/pages/DetailPage.jsx
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import "./DetailPage.css";
 import { fetchInstances } from "../api/client";
 import { STATUS_COLORS } from "../config/cloudConstants";
 
+const NO_CLUSTER_KEY = "no-cluster";
+
 const DetailPage = () => {
   const { mode, provider, status } = useParams();
-  // mode: "provider" | "status"
-  // provider: "aws" | "gcp" | "clouding"
-  // status: "pending" | "running" | ...
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,21 +20,33 @@ const DetailPage = () => {
         setError(null);
 
         const allInstances = await fetchInstances();
-
         let filtered = allInstances;
 
         if (mode === "provider" && provider) {
           filtered = filtered.filter(
             (i) => (i.provider || "").toLowerCase() === provider.toLowerCase()
           );
-        }
-
-        if (mode === "status" && provider && status) {
+        } else if (mode === "status" && provider && status) {
           filtered = filtered.filter(
             (i) =>
               (i.provider || "").toLowerCase() === provider.toLowerCase() &&
               (i.status || "").toLowerCase() === status.toLowerCase()
           );
+        } else if (mode === "cluster" && provider) {
+          filtered = filtered.filter((i) => {
+            const clusterKey =
+              i.cluster_id == null ? NO_CLUSTER_KEY : String(i.cluster_id);
+            return clusterKey === provider;
+          });
+        } else if (mode === "cluster-status" && provider && status) {
+          filtered = filtered.filter((i) => {
+            const clusterKey =
+              i.cluster_id == null ? NO_CLUSTER_KEY : String(i.cluster_id);
+            return (
+              clusterKey === provider &&
+              (i.status || "").toLowerCase() === status.toLowerCase()
+            );
+          });
         }
 
         setItems(filtered);
@@ -56,7 +66,23 @@ const DetailPage = () => {
       return `Instancias en ${provider?.toUpperCase()}`;
     }
     if (mode === "status") {
-      return `Instancias ${status} en ${provider?.toUpperCase()}`;
+      const s = status || "";
+      const label = s.charAt(0).toUpperCase() + s.slice(1);
+      return `Instancias ${label} en ${provider?.toUpperCase()}`;
+    }
+    if (mode === "cluster") {
+      if (!provider || provider === NO_CLUSTER_KEY) {
+        return "Instancias sin cluster";
+      }
+      return `Instancias del cluster ${provider}`;
+    }
+    if (mode === "cluster-status") {
+      const s = status || "";
+      const label = s.charAt(0).toUpperCase() + s.slice(1);
+      if (!provider || provider === NO_CLUSTER_KEY) {
+        return `Instancias ${label} sin cluster`;
+      }
+      return `Instancias ${label} del cluster ${provider}`;
     }
     return "Detalle";
   };
@@ -64,18 +90,10 @@ const DetailPage = () => {
   return (
     <div className="detail-page">
       <div className="detail-page-inner">
-        <div className="detail-top-bar">
-          <Link to="/" className="back-link">
-            &larr; Volver al panel
-          </Link>
+        <Link to="/" className="back-link">
+          &larr; Volver al panel
+        </Link>
 
-          <button
-            className="create-button"
-            onClick={() => {}}
-          >
-            + Crear instancia
-          </button>
-        </div>
         <div className="detail-card">
           <div className="detail-card-header">
             <div>
@@ -101,32 +119,44 @@ const DetailPage = () => {
           {!loading && !error && items.length > 0 && (
             <div className="items-table">
               <div className="items-header">
-                <span>Nombre / CPU</span>
-                <span>Proveedor / Memoria (GB)</span>
+                <span>Nombre</span>
+                <span>CPU</span>
+                <span>Proveedor</span>
+                <span>Memoria (GB)</span>
                 <span>Estado</span>
                 <span>Región</span>
-                <span>Acciones</span>
+                <span>Cluster</span>
               </div>
+
               {items.map((inst) => {
                 const statusKey = (inst.status || "").toLowerCase();
                 const color = STATUS_COLORS[statusKey] || "#999999";
                 const statusLabel =
-                  inst.status?.charAt(0).toUpperCase() +
-                    inst.status?.slice(1) || "Sin estado";
+                  inst.status && inst.status.length > 0
+                    ? inst.status.charAt(0).toUpperCase() +
+                      inst.status.slice(1)
+                    : "Sin estado";
+                const clusterLabel =
+                  inst.cluster_id == null ? "Sin cluster" : inst.cluster_id;
 
                 return (
                   <div className="item-row" key={inst.id}>
-                    {/* Nombre - CPU */}
                     <span className="item-title">
-                      {inst.name || "-"} - {inst.cpu_cores ?? "-"}
+                      {inst.name || "-"}
                     </span>
 
-                    {/* Proveedor - Memoria */}
                     <span>
-                      {(inst.provider || "-").toUpperCase()} - {inst.memory_gb ?? "-"}
+                      {inst.cpu_cores ?? "-"}
                     </span>
 
-                    {/* Estado */}
+                    <span>
+                      {(inst.provider || "-").toUpperCase()}
+                    </span>
+
+                    <span>
+                      {inst.memory_gb ?? "-"}
+                    </span>
+
                     <span className="item-status">
                       <span
                         className="status-dot"
@@ -135,18 +165,9 @@ const DetailPage = () => {
                       <span>{statusLabel}</span>
                     </span>
 
-                    {/* Región */}
                     <span>{inst.region || "-"}</span>
 
-                    {/* Botón editar (de momento sin lógica) */}
-                    <span className="item-actions">
-                      <button
-                        className="edit-button"
-                        onClick={() => {}}
-                      >
-                        Editar
-                      </button>
-                    </span>
+                    <span>{clusterLabel}</span>
                   </div>
                 );
               })}

@@ -2,7 +2,7 @@
 export const BASE_URL = "http://localhost:8000"; // ⬅️ CAMBIA ESTO
 
 // Proveedores soportados por tu API
-export const PROVIDERS = ["aws", "gcp", "clouding"];
+export const PROVIDERS = ["aws", "gcp"];
 
 // Estados soportados por tu API (InstanceStatus)
 export const STATUSES = [

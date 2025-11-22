@@ -15,11 +15,24 @@ import {
 import "./Dashboard.css";
 import { fetchInstances } from "../api/client";
 import {
-  PROVIDERS,
   STATUSES,
   MAIN_COLORS,
   STATUS_COLORS,
 } from "../config/cloudConstants";
+
+const NO_CLUSTER_KEY = "no-cluster";
+
+const getClusterColor = (clusterKey) => {
+  const str = String(clusterKey || NO_CLUSTER_KEY);
+  let hash = 0;
+  for (let i = 0; i < str.length; i += 1) {
+    hash = (hash * 31 + str.charCodeAt(i)) & 0xffffffff;
+  }
+  const hue = hash % 360;
+  const saturation = 80;
+  const lightness = 80;
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -47,31 +60,40 @@ const Dashboard = () => {
   }, []);
 
   const mainChartData = useMemo(() => {
-    const counts = Object.fromEntries(PROVIDERS.map((p) => [p, 0]));
+    const clusterMap = new Map();
 
     instances.forEach((inst) => {
-      const provider = (inst.provider || "").toLowerCase();
-      if (counts[provider] !== undefined) {
-        counts[provider] += 1;
+      const rawId = inst.cluster_id || null;
+      const key = rawId ? String(rawId) : NO_CLUSTER_KEY;
+      if (!clusterMap.has(key)) {
+        clusterMap.set(key, {
+          name: rawId || "Sin cluster",
+          clusterId: rawId,
+          clusterKey: key,
+          value: 0,
+        });
       }
+      const item = clusterMap.get(key);
+      item.value += 1;
     });
 
-    return PROVIDERS
-      .map((p) => ({
-        name: p.toUpperCase(),
-        provider: p,
-        value: counts[p],
-      }))
-      .filter((item) => item.value > 0);
+    return Array.from(clusterMap.values())
+      .filter((item) => item.value > 0)
+      .map((item) => ({
+        ...item,
+        color: getClusterColor(item.clusterKey),
+      }));
   }, [instances]);
 
   const smallChartsData = useMemo(() => {
     const baseStatusCounts = () =>
       Object.fromEntries(STATUSES.map((s) => [s, 0]));
 
-    const byProviderStatus = Object.fromEntries(
-      PROVIDERS.map((p) => [p, baseStatusCounts()])
-    );
+    const byProviderStatus = {
+      aws: baseStatusCounts(),
+      gcp: baseStatusCounts(),
+      // clouding: baseStatusCounts(),
+    };
 
     instances.forEach((inst) => {
       const provider = (inst.provider || "").toLowerCase();
@@ -92,7 +114,7 @@ const Dashboard = () => {
     return {
       aws: toPieData(byProviderStatus.aws),
       gcp: toPieData(byProviderStatus.gcp),
-      clouding: toPieData(byProviderStatus.clouding),
+      // clouding: toPieData(byProviderStatus.clouding),
     };
   }, [instances]);
 
@@ -100,69 +122,98 @@ const Dashboard = () => {
     const baseStatusCounts = () =>
       Object.fromEntries(STATUSES.map((s) => [s, 0]));
 
-    const byProviderStatus = Object.fromEntries(
-      PROVIDERS.map((p) => [p, baseStatusCounts()])
-    );
+    const byCluster = {};
 
     instances.forEach((inst) => {
-      const provider = (inst.provider || "").toLowerCase();
+      const rawId = inst.cluster_id || null;
+      const key = rawId ? String(rawId) : NO_CLUSTER_KEY;
+      if (!byCluster[key]) {
+        byCluster[key] = {
+          cluster: rawId || "Sin cluster",
+          clusterId: rawId,
+          clusterKey: key,
+          ...baseStatusCounts(),
+        };
+      }
       const status = (inst.status || "").toLowerCase();
-
-      if (!byProviderStatus[provider]) return;
-      if (byProviderStatus[provider][status] === undefined) return;
-
-      byProviderStatus[provider][status] += 1;
+      if (byCluster[key][status] === undefined) return;
+      byCluster[key][status] += 1;
     });
 
-    return PROVIDERS.map((p) => ({
-      provider: p.toUpperCase(),
-      ...byProviderStatus[p],
-    }));
+    return Object.values(byCluster);
   }, [instances]);
-
-  const handleMainSliceClick = (provider) => {
-    navigate(`/detalle/provider/${provider}`);
-  };
 
   const handleSmallSliceClick = (provider, status) => {
     navigate(`/detalle/status/${provider}/${status}`);
   };
 
-  const renderPie = (data, { isMain = false, onSliceClick } = {}) => (
-    <ResponsiveContainer width="100%" height="100%">
-      <PieChart>
-        <Pie
-          data={data}
-          dataKey="value"
-          nameKey="name"
-          cx="50%"
-          cy="50%"
-          outerRadius={isMain ? "85%" : "75%"}
-          onClick={(_, index) => {
-            if (!onSliceClick) return;
-            const item = data[index];
-            if (!item) return;
-            onSliceClick(item);
-          }}
-        >
-          {data.map((entry, index) => {
-            const fillColor = isMain
-              ? MAIN_COLORS[index % MAIN_COLORS.length]
-              : STATUS_COLORS[entry.name] || "#999999";
+  const handleProviderDetail = (provider) => {
+    navigate(`/detalle/provider/${provider}`);
+  };
 
-            return (
-              <Cell
-                key={`cell-${index}`}
-                fill={fillColor}
-                style={{ cursor: "pointer" }}
-              />
-            );
-          })}
-        </Pie>
-        <Tooltip />
-      </PieChart>
-    </ResponsiveContainer>
-  );
+  const handleMainClusterSliceClick = (item) => {
+    const clusterKey = item.clusterKey || NO_CLUSTER_KEY;
+    navigate(`/detalle/cluster/${encodeURIComponent(clusterKey)}`);
+  };
+
+  const handleBarClick = (status, data) => {
+    if (!data || !data.payload) {
+      return;
+    }
+    const clusterKey = data.payload.clusterKey || NO_CLUSTER_KEY;
+    navigate(
+      `/detalle/cluster-status/${encodeURIComponent(clusterKey)}/${status}`
+    );
+  };
+
+  const renderPie = (data, { isMain = false, onSliceClick } = {}) => {
+    const isEmpty = !data || data.length === 0;
+    const pieData = isEmpty ? [{ name: "empty", value: 1 }] : data;
+
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={pieData}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            outerRadius={isMain ? "85%" : "75%"}
+            onClick={
+              isEmpty
+                ? undefined
+                : (_, index) => {
+                    if (!onSliceClick) return;
+                    const item = data[index];
+                    if (!item) return;
+                    onSliceClick(item);
+                  }
+            }
+            stroke={isEmpty ? "#d1d5db" : undefined}
+            strokeWidth={isEmpty ? 2 : 1}
+            fill={isEmpty ? "none" : undefined}
+          >
+            {!isEmpty &&
+              data.map((entry, index) => {
+                const fillColor = isMain
+                  ? entry.color || MAIN_COLORS[index % MAIN_COLORS.length]
+                  : STATUS_COLORS[entry.name] || "#999999";
+
+                return (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={fillColor}
+                    style={{ cursor: "pointer" }}
+                  />
+                );
+              })}
+          </Pie>
+          {!isEmpty && <Tooltip />}
+        </PieChart>
+      </ResponsiveContainer>
+    );
+  };
 
   if (loading) {
     return (
@@ -184,8 +235,13 @@ const Dashboard = () => {
     <div className="dashboard-container">
       <div className="charts-row">
         <div className="main-chart-card">
-          <div className="main-chart-title">
-            <h2 className="card-title">Instancias por proveedor</h2>
+          <div className="main-chart-header">
+            <div className="main-chart-title">
+              <h2 className="card-title">Instancias por cluster</h2>
+            </div>
+            <button className="create-button" onClick={() => {}}>
+              + Crear instancia
+            </button>
           </div>
 
           <div className="main-chart-content">
@@ -194,8 +250,7 @@ const Dashboard = () => {
                 <div className="main-chart-pie-inner">
                   {renderPie(mainChartData, {
                     isMain: true,
-                    onSliceClick: (item) =>
-                      handleMainSliceClick(item.provider),
+                    onSliceClick: handleMainClusterSliceClick,
                   })}
                 </div>
               </div>
@@ -207,7 +262,7 @@ const Dashboard = () => {
                       className="legend-color"
                       style={{
                         backgroundColor:
-                          MAIN_COLORS[index % MAIN_COLORS.length],
+                          item.color || MAIN_COLORS[index % MAIN_COLORS.length],
                       }}
                     />
                     <span>{item.name}</span>
@@ -221,11 +276,12 @@ const Dashboard = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={barChartData}
-                    margin={{ top: 10, right: 20, bottom: 30, left: 0 }}
+                    layout="vertical"
+                    margin={{ top: 10, right: 20, bottom: 10, left: 80 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="provider" />
-                    <YAxis allowDecimals={false} />
+                    <XAxis type="number" allowDecimals={false} />
+                    <YAxis type="category" dataKey="cluster" width={100} />
                     <Tooltip />
                     {STATUSES.map((status) => (
                       <Bar
@@ -233,6 +289,7 @@ const Dashboard = () => {
                         dataKey={status}
                         stackId="a"
                         fill={STATUS_COLORS[status]}
+                        onClick={(data) => handleBarClick(status, data)}
                       />
                     ))}
                   </BarChart>
@@ -243,20 +300,20 @@ const Dashboard = () => {
         </div>
 
         <div className="small-charts-wrapper">
-          <div className="small-charts-legend">
-            {STATUSES.map((status) => (
-              <div className="legend-item" key={status}>
-                <span
-                  className="legend-color"
-                  style={{ backgroundColor: STATUS_COLORS[status] }}
-                />
-                <span>{status}</span>
-              </div>
-            ))}
+          <div className="main-chart-title">
+              <h2 className="small-card-title">Instancias por proveedor</h2>
           </div>
-
           <div className="small-chart-block">
-            <h3 className="small-chart-title">AWS</h3>
+            <div className="small-chart-header">
+              <h3 className="small-chart-title">AWS</h3>
+              <button
+                className="small-plus-button"
+                onClick={() => handleProviderDetail("aws")}
+                aria-label="Ver todas las instancias de AWS"
+              >
+                +
+              </button>
+            </div>
             <div className="small-chart">
               {renderPie(smallChartsData.aws, {
                 onSliceClick: (item) =>
@@ -266,7 +323,16 @@ const Dashboard = () => {
           </div>
 
           <div className="small-chart-block">
-            <h3 className="small-chart-title">GCP</h3>
+            <div className="small-chart-header">
+              <h3 className="small-chart-title">GCP</h3>
+              <button
+                className="small-plus-button"
+                onClick={() => handleProviderDetail("gcp")}
+                aria-label="Ver todas las instancias de GCP"
+              >
+                +
+              </button>
+            </div>
             <div className="small-chart">
               {renderPie(smallChartsData.gcp, {
                 onSliceClick: (item) =>
@@ -275,14 +341,39 @@ const Dashboard = () => {
             </div>
           </div>
 
+          {/*
           <div className="small-chart-block">
-            <h3 className="small-chart-title">Clouding</h3>
+            <div className="small-chart-header">
+              <h3 className="small-chart-title">Clouding</h3>
+              <button
+                className="small-plus-button"
+                onClick={() => handleProviderDetail("clouding")}
+                aria-label="Ver todas las instancias de Clouding"
+              >
+                👁
+              </button>
+            </div>
             <div className="small-chart">
               {renderPie(smallChartsData.clouding, {
                 onSliceClick: (item) =>
                   handleSmallSliceClick("clouding", item.name),
               })}
             </div>
+          </div>
+          */}
+
+          <div className="small-charts-legend">
+            {STATUSES.map((status) => (
+              <div className="legend-item" key={status}>
+                <span
+                  className="legend-color"
+                  style={{ backgroundColor: STATUS_COLORS[status] }}
+                />
+                <span>
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
