@@ -1,0 +1,405 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import styled from 'styled-components';
+import { useAuth } from '../contexts/AuthContext';
+
+const LoginContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+`;
+
+const LoginCard = styled.div`
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 3rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: fadeIn 0.5s ease-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+`;
+
+const Logo = styled.div`
+  text-align: center;
+  margin-bottom: 2rem;
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-weight: 400;
+  }
+`;
+
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const Label = styled.label`
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25rem;
+`;
+
+const Input = styled.input`
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #1f2937;
+  background: #ffffff;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+
+  &::placeholder {
+    color: #9ca3af;
+  }
+
+  &:disabled {
+    background: #f9fafb;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+`;
+
+const Button = styled.button`
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 400;
+  animation: shake 0.5s ease-in-out;
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+`;
+
+const SuccessMessage = styled.div`
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #16a34a;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 400;
+`;
+
+const RegisterLink = styled.p`
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+
+  a {
+    color: #6366f1;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: #5558e3;
+    }
+  }
+`;
+
+const LoadingSpinner = styled.div`
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+`;
+
+const Login = () => {
+  const [formData, setFormData] = useState({
+    username: '',
+    password: ''
+  });
+  const [showRegister, setShowRegister] = useState(false);
+  const [registerData, setRegisterData] = useState({
+    username: '',
+    email: '',
+    full_name: '',
+    password: ''
+  });
+  const [successMessage, setSuccessMessage] = useState('');
+  const navigate = useNavigate();
+  const { login, register, error, clearError, loading } = useAuth();
+
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage('');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    if (showRegister) {
+      setRegisterData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+    if (error) clearError();
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    const result = await login(formData.username, formData.password);
+    if (result.success) {
+      navigate('/dashboard');
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    const result = await register(registerData);
+    if (result.success) {
+      setSuccessMessage('¡Registro exitoso! Ahora puedes iniciar sesión.');
+      setShowRegister(false);
+      setRegisterData({
+        username: '',
+        email: '',
+        full_name: '',
+        password: ''
+      });
+    }
+  };
+
+  const toggleMode = () => {
+    setShowRegister(!showRegister);
+    setSuccessMessage('');
+    clearError();
+    if (!showRegister) {
+      setFormData({ username: '', password: '' });
+    } else {
+      setRegisterData({ username: '', email: '', full_name: '', password: '' });
+    }
+  };
+
+  return (
+    <LoginContainer>
+      <LoginCard>
+        <Logo>
+          <h1>Login</h1>
+          <p>Benvingut/da a la teva aplicació</p>
+        </Logo>
+
+        {successMessage && (
+          <SuccessMessage className="fade-in">
+            {successMessage}
+          </SuccessMessage>
+        )}
+
+        {error && (
+          <ErrorMessage className="fade-in">
+            {error}
+          </ErrorMessage>
+        )}
+
+        {!showRegister ? (
+          <Form onSubmit={handleLogin}>
+            <FormGroup>
+              <Label htmlFor="username">Usuari</Label>
+              <Input
+                type="text"
+                id="username"
+                name="username"
+                value={formData.username}
+                onChange={handleInputChange}
+                placeholder="Ingresa tu usuario"
+                required
+                disabled={loading}
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="password">Contrasenya</Label>
+              <Input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder="Ingresa tu contraseña"
+                required
+                disabled={loading}
+              />
+            </FormGroup>
+
+            <Button type="submit" disabled={loading}>
+              {loading ? <LoadingSpinner /> : 'Iniciar Sesión'}
+            </Button>
+          </Form>
+        ) : (
+          <Form onSubmit={handleRegister}>
+            <FormGroup>
+              <Label htmlFor="username">Usuari</Label>
+              <Input
+                type="text"
+                id="username"
+                name="username"
+                value={registerData.username}
+                onChange={handleInputChange}
+                placeholder="Elige un usuario"
+                required
+                disabled={loading}
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                type="email"
+                id="email"
+                name="email"
+                value={registerData.email}
+                onChange={handleInputChange}
+                placeholder="Ingresa tu email"
+                required
+                disabled={loading}
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="full_name">Nom Complet</Label>
+              <Input
+                type="text"
+                id="full_name"
+                name="full_name"
+                value={registerData.full_name}
+                onChange={handleInputChange}
+                placeholder="Ingresa tu nombre completo"
+                required
+                disabled={loading}
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="password">Contrasenya</Label>
+              <Input
+                type="password"
+                id="password"
+                name="password"
+                value={registerData.password}
+                onChange={handleInputChange}
+                placeholder="Crea una contraseña"
+                required
+                disabled={loading}
+              />
+            </FormGroup>
+
+            <Button type="submit" disabled={loading}>
+              {loading ? <LoadingSpinner /> : 'Registrar-se'}
+            </Button>
+          </Form>
+        )}
+
+        <RegisterLink>
+          {!showRegister ? (
+            <>¿No tens compte? <a href="#" onClick={toggleMode}>Registra't aquí</a></>
+          ) : (
+            <>¿Ja tens compte? <a href="#" onClick={toggleMode}>Inicia sessió aquí</a></>
+          )}
+        </RegisterLink>
+      </LoginCard>
+    </LoginContainer>
+  );
+};
+
+export default Login;
