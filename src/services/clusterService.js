@@ -16,3 +16,19 @@ export async function createCluster(clusterData) {
 
   return await res.json();
 }
+
+export async function updateInstancesStatus() {
+  const res = await fetch('/api/v1/instances/update_status', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ message: 'Error al actualizar estados' }));
+    throw new Error(errorData.detail || errorData.message || 'Error desconocido');
+  }
+
+  return await res.json();
+}

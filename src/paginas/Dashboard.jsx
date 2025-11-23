@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import "./Dashboard.css";
 import { fetchInstances } from "../api/client";
+import { updateInstancesStatus } from "../services/clusterService";
 import {
   STATUSES,
   MAIN_COLORS,
@@ -43,6 +44,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCreateOptions, setShowCreateOptions] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -61,6 +63,21 @@ const Dashboard = () => {
 
     load();
   }, []);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    setError(null);
+    try {
+      await updateInstancesStatus();
+      const data = await fetchInstances();
+      setInstances(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Error al refrescar los datos");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const mainChartData = useMemo(() => {
     const clusterMap = new Map();
@@ -262,33 +279,38 @@ const Dashboard = () => {
               <h2 className="card-title">Instancias por cluster</h2>
             </div>
 
-            <div className="create-button-wrapper">
-              <button className="create-button" onClick={handleCreateClick}>
-                + Crear instancia
+            <div className="main-chart-actions">
+              <button className="refresh-button" onClick={handleRefresh} disabled={isRefreshing}>
+                {isRefreshing ? 'Recargando...' : 'Recargar Datos'}
               </button>
+              <div className="create-button-wrapper">
+                <button className="create-button" onClick={handleCreateClick}>
+                  + Crear instancia
+                </button>
 
-              {showCreateOptions && (
-                <div className="create-options">
-                  <button
-                    className="create-option-button"
-                    onClick={() => {
-                      setShowCreateOptions(false);
-                      navigate("/crear/manual");
-                    }}
-                  >
-                    Manual
-                  </button>
-                  <button
-                    className="create-option-button"
-                    onClick={() => {
-                      setShowCreateOptions(false);
-                      navigate("/crear/llm");
-                    }}
-                  >
-                    LLM
-                  </button>
-                </div>
-              )}
+                {showCreateOptions && (
+                  <div className="create-options">
+                    <button
+                      className="create-option-button"
+                      onClick={() => {
+                        setShowCreateOptions(false);
+                        navigate("/crear/manual");
+                      }}
+                    >
+                      Manual
+                    </button>
+                    <button
+                      className="create-option-button"
+                      onClick={() => {
+                        setShowCreateOptions(false);
+                        navigate("/crear/llm");
+                      }}
+                    >
+                      LLM
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

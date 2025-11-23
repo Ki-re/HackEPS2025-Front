@@ -84,7 +84,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .main-chart-title {
@@ -339,4 +340,35 @@
 .create-button-wrapper {
   position: relative;
   display: inline-block;
+}
+
+.main-chart-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.refresh-button,
+.create-button {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.refresh-button:hover,
+.create-button:hover {
+  background-color: #1d4ed8;
+}
+
+.refresh-button:disabled,
+.create-button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
 }
