@@ -48,7 +48,7 @@ const LLMPage = () => {
 • **Tipo**: ${['micro', 'small', 'medium'][Math.floor(Math.random() * 3)]}
 • **Configuración**: Docker Swarm con auto-scaling
 
-¿Te gustaría proceder con la creación automática del cluster? Puedes ir a "Crear instancia > Manual" para configurar los detalles.`;
+¿Te gustaría proceder con la creación automática del cluster? Puedes ir a "Crear Nuevo Cluster > Manual" para configurar los detalles.`;
 
       setMessages((prev) =>
         prev.map((m) =>

@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import "./Dashboard.css";
 import { fetchInstances } from "../api/client";
+import { updateInstancesStatus } from "../services/clusterService";
 import {
   STATUSES,
   MAIN_COLORS,
@@ -43,6 +44,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCreateOptions, setShowCreateOptions] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -53,7 +55,7 @@ const Dashboard = () => {
         setInstances(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error(err);
-        setError(err.message || "Error desconocido");
+        setError(err.message || "Error desconegut");
       } finally {
         setLoading(false);
       }
@@ -61,6 +63,21 @@ const Dashboard = () => {
 
     load();
   }, []);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    setError(null);
+    try {
+      await updateInstancesStatus();
+      const data = await fetchInstances();
+      setInstances(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Error en refrescar les dades");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const mainChartData = useMemo(() => {
     const clusterMap = new Map();
@@ -70,7 +87,7 @@ const Dashboard = () => {
       const key = rawId ? String(rawId) : NO_CLUSTER_KEY;
       if (!clusterMap.has(key)) {
         clusterMap.set(key, {
-          name: rawId || "Sin cluster",
+          name: rawId || "Sense clúster",
           clusterId: rawId,
           clusterKey: key,
           value: 0,
@@ -132,7 +149,7 @@ const Dashboard = () => {
       const key = rawId ? String(rawId) : NO_CLUSTER_KEY;
       if (!byCluster[key]) {
         byCluster[key] = {
-          cluster: rawId || "Sin cluster",
+          cluster: rawId || "Sense clúster",
           clusterId: rawId,
           clusterKey: key,
           ...baseStatusCounts(),
@@ -230,7 +247,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="dashboard-container">
-        <p>Cargando datos...</p>
+        <p>Carregant dades...</p>
       </div>
     );
   }
@@ -238,7 +255,7 @@ const Dashboard = () => {
   if (error) {
     return (
       <div className="dashboard-container">
-        <p>Error cargando datos: {error}</p>
+        <p>Error carregant dades: {error}</p>
       </div>
     );
   }
@@ -259,36 +276,41 @@ const Dashboard = () => {
         <div className="main-chart-card">
           <div className="main-chart-header">
             <div className="main-chart-title">
-              <h2 className="card-title">Instancias por cluster</h2>
+              <h2 className="card-title">Instàncies per clúster</h2>
             </div>
 
-            <div className="create-button-wrapper">
-              <button className="create-button" onClick={handleCreateClick}>
-                + Crear instancia
+            <div className="main-chart-actions">
+              <button className="refresh-button" onClick={handleRefresh} disabled={isRefreshing}>
+                {isRefreshing ? 'Recarregant...' : 'Recarregar Dades'}
               </button>
+              <div className="create-button-wrapper">
+                <button className="create-button" onClick={handleCreateClick}>
+                  + Crear instància
+                </button>
 
-              {showCreateOptions && (
-                <div className="create-options">
-                  <button
-                    className="create-option-button"
-                    onClick={() => {
-                      setShowCreateOptions(false);
-                      navigate("/crear/manual");
-                    }}
-                  >
-                    Manual
-                  </button>
-                  <button
-                    className="create-option-button"
-                    onClick={() => {
-                      setShowCreateOptions(false);
-                      navigate("/crear/llm");
-                    }}
-                  >
-                    LLM
-                  </button>
-                </div>
-              )}
+                {showCreateOptions && (
+                  <div className="create-options">
+                    <button
+                      className="create-option-button"
+                      onClick={() => {
+                        setShowCreateOptions(false);
+                        navigate("/crear/manual");
+                      }}
+                    >
+                      Manual
+                    </button>
+                    <button
+                      className="create-option-button"
+                      onClick={() => {
+                        setShowCreateOptions(false);
+                        navigate("/crear/llm");
+                      }}
+                    >
+                      LLM
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -354,7 +376,7 @@ const Dashboard = () => {
               <button
                 className="small-plus-button"
                 onClick={() => handleProviderDetail("aws")}
-                aria-label="Ver todas las instancias de AWS"
+                aria-label="Veure totes les instàncies d'AWS"
               >
                 +
               </button>
@@ -373,7 +395,7 @@ const Dashboard = () => {
               <button
                 className="small-plus-button"
                 onClick={() => handleProviderDetail("gcp")}
-                aria-label="Ver todas las instancias de GCP"
+                aria-label="Veure totes les instàncies de GCP"
               >
                 +
               </button>

@@ -178,10 +178,6 @@ const Login = () => {
           <p>Benvingut/da a la plataforma</p>
         </Logo>
 
-        <DemoInfo>
-          💡 Mode demo: usa qualsevol usuari i contrasenya per entrar
-        </DemoInfo>
-
         {error && (
           <ErrorMessage>
             {error}

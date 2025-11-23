@@ -194,7 +194,7 @@ const CreateCluster = () => {
 
           <div className="form-row">
             <div className="form-group">
-              <label>Puerto de la Aplicació</label>
+              <label>Port de l'Aplicació</label>
               <input
                 type="number"
                 name="service_port"
@@ -216,7 +216,7 @@ const CreateCluster = () => {
             >
               <option value="nginx">Nginx</option>
               <option value="dummy">Dummy</option>
-              <option value="custom">Custom</option>
+              <option value="custom">Personalitzat</option>
             </select>
           </div>
 

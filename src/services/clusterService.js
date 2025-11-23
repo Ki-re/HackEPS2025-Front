@@ -1,7 +1,7 @@
 import { BASE_URL } from "../config/cloudConstants";
 
 export async function createCluster(clusterData) {
-  const res = await fetch('/api/v1/clusters/', {
+  const res = await fetch(`${BASE_URL}/api/v1/clusters/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -10,8 +10,24 @@ export async function createCluster(clusterData) {
   });
 
   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({ message: 'Error en la creación del clúster' }));
-    throw new Error(errorData.detail || errorData.message || 'Error desconocido');
+    const errorData = await res.json().catch(() => ({ message: 'Error en la creació del clúster' }));
+    throw new Error(errorData.detail || errorData.message || 'Error desconegut');
+  }
+
+  return await res.json();
+}
+
+export async function updateInstancesStatus() {
+  const res = await fetch('/api/v1/instances/update_status', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ message: 'Error en actualitzar els estats' }));
+    throw new Error(errorData.detail || errorData.message || 'Error desconegut');
   }
 
   return await res.json();

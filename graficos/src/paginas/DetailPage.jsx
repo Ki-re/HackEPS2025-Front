@@ -65,33 +65,33 @@ const DetailPage = () => {
 
   const getTitle = () => {
     if (mode === "provider") {
-      return `Instancias en ${provider?.toUpperCase()}`;
+      return `Instàncies a ${provider?.toUpperCase()}`;
     }
     if (mode === "status") {
       const s = status || "";
       const label = s.charAt(0).toUpperCase() + s.slice(1);
-      return `Instancias ${label} en ${provider?.toUpperCase()}`;
+      return `Instàncies ${label} a ${provider?.toUpperCase()}`;
     }
     if (mode === "cluster") {
       if (!provider || provider === NO_CLUSTER_KEY) {
-        return "Instancias sin cluster";
+        return "Instàncies sense clúster";
       }
       // Try to find the cluster name for the title
       const sampleInstance = items.find((i) => String(i.cluster_id) === provider);
-      const clusterDisplayName = sampleInstance?.cluster_name || `Cluster ${provider}`;
-      return `Instancias de ${clusterDisplayName}`;
+      const clusterDisplayName = sampleInstance?.cluster_name || `Clúster ${provider}`;
+      return `Instàncies de ${clusterDisplayName}`;
     }
     if (mode === "cluster-status") {
       const s = status || "";
       const label = s.charAt(0).toUpperCase() + s.slice(1);
       if (!provider || provider === NO_CLUSTER_KEY) {
-        return `Instancias ${label} sin cluster`;
+        return `Instàncies ${label} sense clúster`;
       }
       const sampleInstance = items.find((i) => String(i.cluster_id) === provider);
-      const clusterDisplayName = sampleInstance?.cluster_name || `Cluster ${provider}`;
-      return `Instancias ${label} de ${clusterDisplayName}`;
+      const clusterDisplayName = sampleInstance?.cluster_name || `Clúster ${provider}`;
+      return `Instàncies ${label} de ${clusterDisplayName}`;
     }
-    return "Detalle";
+    return "Detall";
   };
 
   return (
@@ -99,10 +99,10 @@ const DetailPage = () => {
       <div className="detail-page-inner">
         <div className="detail-header">
           <Link to="/" className="back-link">
-            &larr; Volver al panel
+            &larr; Tornar al panell
           </Link>
           <span className="user-badge">
-            {user?.username || "Usuario"}
+            {user?.username || "Usuari"}
           </span>
         </div>
 
@@ -111,12 +111,12 @@ const DetailPage = () => {
             <div>
               <h2>{getTitle()}</h2>
               <p className="detail-subtitle">
-                Lista de instancias según el segmento seleccionado.
+                Llista d'instàncies segons el segment seleccionat.
               </p>
             </div>
           </div>
 
-          {loading && <p className="empty-state">Cargando instancias...</p>}
+          {loading && <p className="empty-state">Carregant instàncies...</p>}
 
           {error && !loading && (
             <p className="empty-state">Error: {error}</p>
@@ -124,21 +124,21 @@ const DetailPage = () => {
 
           {!loading && !error && items.length === 0 && (
             <p className="empty-state">
-              No hay instancias que cumplan este filtro.
+              No hi ha instàncies que compleixin aquest filtre.
             </p>
           )}
 
           {!loading && !error && items.length > 0 && (
             <div className="items-table">
               <div className="items-header">
-                <span>Nombre</span>
+                <span>Nom</span>
                 <span>CPU</span>
-                <span>Proveedor</span>
-                <span>Memoria (GB)</span>
-                <span>Estado</span>
-                <span>Región</span>
+                <span>Proveïdor</span>
+                <span>Memòria (GB)</span>
+                <span>Estat</span>
+                <span>Regió</span>
                 <span>IP master</span>
-                <span>Cluster</span>
+                <span>Clúster</span>
               </div>
 
               {items.map((inst) => {
@@ -148,9 +148,9 @@ const DetailPage = () => {
                   inst.status && inst.status.length > 0
                     ? inst.status.charAt(0).toUpperCase() +
                       inst.status.slice(1)
-                    : "Sin estado";
+                    : "Sense estat";
                 const clusterLabel =
-                  inst.cluster_name || (inst.cluster_id ? `Cluster ${inst.cluster_id}` : "Sin cluster");
+                  inst.cluster_name || (inst.cluster_id ? `Clúster ${inst.cluster_id}` : "Sense clúster");
                 const masterIp =
                   inst.external_ip || inst.internal_ip || "";
                 const masterIpUrl = masterIp ? `http://${masterIp}` : null;

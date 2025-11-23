@@ -281,7 +281,7 @@ const Dashboard = () => {
 
             <div className="create-button-wrapper">
               <button className="create-button" onClick={handleCreateClick}>
-                + Crear instancia
+                + Crear Nuevo Cluster
               </button>
 
               {showCreateOptions && (
