@@ -1,26 +1,18 @@
 import { BASE_URL } from "../config/cloudConstants";
 
-export const createCluster = async (clusterData) => {
-  try {
-    console.log('🚀 [MOCK] Creant cluster amb dades:', clusterData);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Mock successful response
-    const mockResponse = {
-      id: Math.floor(Math.random() * 1000),
-      name: clusterData.name,
-      status: 'creating',
-      created_at: new Date().toISOString(),
-      ...clusterData
-    };
-    
-    console.log('✅ [MOCK] Cluster creat exitosament:', mockResponse);
-    return mockResponse;
-    
-  } catch (error) {
-    console.error('❌ [MOCK] Error creant cluster:', error);
-    throw new Error('Error simulat en crear el clúster');
+export async function createCluster(clusterData) {
+  const res = await fetch('/api/v1/clusters/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(clusterData),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ message: 'Error en la creación del clúster' }));
+    throw new Error(errorData.detail || errorData.message || 'Error desconocido');
   }
-};
+
+  return await res.json();
+}

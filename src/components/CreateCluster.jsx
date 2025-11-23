@@ -53,6 +53,7 @@ const CreateCluster = () => {
     n_instances: 1,
     docker_compose: DOCKER_TEMPLATES.nginx, 
     instance_type: 'micro',
+    service_port: 80,
     network_config: {}
   });
 
@@ -63,7 +64,12 @@ const CreateCluster = () => {
     if (mode === 'custom') {
       setFormData(prev => ({ ...prev, docker_compose: '' }));
     } else {
-      setFormData(prev => ({ ...prev, docker_compose: DOCKER_TEMPLATES[mode] }));
+      const newPort = mode === 'nginx' ? 80 : 30008;
+      setFormData(prev => ({ 
+        ...prev, 
+        docker_compose: DOCKER_TEMPLATES[mode],
+        service_port: newPort
+      }));
     }
   };
 
@@ -74,6 +80,8 @@ const CreateCluster = () => {
       const val = parseInt(value) || 0;
       if (val > 8) return;
       setFormData(prev => ({ ...prev, [name]: val }));
+    } else if (name === 'service_port') {
+      setFormData(prev => ({ ...prev, [name]: parseInt(value) || 0 }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -87,8 +95,8 @@ const CreateCluster = () => {
     try {
       const result = await createCluster(formData);
       alert(`✅ Clúster "${result.name}" creat correctament!`);
-      // Redirect to dashboard after successful creation
-      navigate('/', { replace: true }); 
+      // Redirect to dashboard after successful creation, with state to trigger refetch
+      navigate('/', { replace: true, state: { clusterCreated: true } }); 
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -143,7 +151,7 @@ const CreateCluster = () => {
               <label>Tipus de Clúster</label>
               <select name="cluster_type" value={formData.cluster_type} onChange={handleChange}>
                 <option value="docker-swarm">Docker Swarm</option>
-                <option value="kubernetes">Kubernetes</option>
+                {/* <option value="kubernetes">Kubernetes</option> */}
               </select>
             </div>
 
@@ -181,6 +189,22 @@ const CreateCluster = () => {
                 <option value="medium">medium</option>
                 <option value="large">large</option>
               </select>
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Puerto de la Aplicació</label>
+              <input
+                type="number"
+                name="service_port"
+                value={formData.service_port}
+                onChange={handleChange}
+                placeholder="ex: 8080"
+                min="1"
+                max="65535"
+                disabled={composeMode !== 'custom'}
+              />
             </div>
           </div>
 

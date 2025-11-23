@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   PieChart,
   Pie,
@@ -35,8 +35,15 @@ const getClusterColor = (clusterKey) => {
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
 
+// Helper function to generate cluster names from IDs - now uses actual cluster names
+const getClusterDisplayName = (clusterId, clusterName) => {
+  if (!clusterId) return "Sin cluster";
+  return clusterName || `Cluster ${clusterId}`;
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout, user } = useAuth();
 
   const [instances, setInstances] = useState([]);
@@ -60,7 +67,13 @@ const Dashboard = () => {
     };
 
     load();
-  }, []);
+    // If we came from the create page, clear the state to avoid re-fetching on other navigations
+    if (location.state?.clusterCreated) {
+      const state = { ...location.state };
+      delete state.clusterCreated;
+      navigate(location.pathname, { replace: true, state });
+    }
+  }, [location.state?.clusterCreated]);
 
   const mainChartData = useMemo(() => {
     const clusterMap = new Map();
@@ -68,9 +81,11 @@ const Dashboard = () => {
     instances.forEach((inst) => {
       const rawId = inst.cluster_id || null;
       const key = rawId ? String(rawId) : NO_CLUSTER_KEY;
+      const displayName = getClusterDisplayName(rawId, inst.cluster_name);
+      
       if (!clusterMap.has(key)) {
         clusterMap.set(key, {
-          name: rawId || "Sin cluster",
+          name: displayName,
           clusterId: rawId,
           clusterKey: key,
           value: 0,
@@ -130,9 +145,11 @@ const Dashboard = () => {
     instances.forEach((inst) => {
       const rawId = inst.cluster_id || null;
       const key = rawId ? String(rawId) : NO_CLUSTER_KEY;
+      const displayName = getClusterDisplayName(rawId, inst.cluster_name);
+      
       if (!byCluster[key]) {
         byCluster[key] = {
-          cluster: rawId || "Sin cluster",
+          cluster: displayName,
           clusterId: rawId,
           clusterKey: key,
           ...baseStatusCounts(),
