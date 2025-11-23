@@ -166,3 +166,67 @@
   25% { transform: translateX(-5px); }
   75% { transform: translateX(5px); }
 }
+
+/* Estilos para la Terminal de Logs */
+.terminal-window {
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  font-family: 'Fira Code', 'Courier New', monospace;
+  margin-bottom: 20px;
+  overflow: hidden;
+  border: 1px solid #333;
+}
+
+.terminal-header {
+  background-color: #2d2d2d;
+  padding: 8px 15px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #333;
+}
+
+.terminal-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.terminal-dot.red { background-color: #ff5f56; }
+.terminal-dot.yellow { background-color: #ffbd2e; }
+.terminal-dot.green { background-color: #27c93f; }
+
+.terminal-title {
+  color: #999;
+  font-size: 0.8rem;
+  margin-left: 10px;
+  flex-grow: 1;
+  text-align: center;
+}
+
+.terminal-content {
+  padding: 15px;
+  height: 300px; /* Altura fija */
+  overflow-y: auto; /* Scroll automático */
+  color: #d4d4d4;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.log-line {
+  margin-bottom: 4px;
+  white-space: pre-wrap; /* Para que los saltos de línea del log se respeten */
+  word-break: break-all;
+}
+
+.log-prompt {
+  color: #27c93f; /* Verde hacker */
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+.log-line.pending {
+  color: #ffbd2e;
+  font-style: italic;
+}
