@@ -10,8 +10,8 @@ export async function createCluster(clusterData) {
   });
 
   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({ message: 'Error en la creación del clúster' }));
-    throw new Error(errorData.detail || errorData.message || 'Error desconocido');
+    const errorData = await res.json().catch(() => ({ message: 'Error en la creació del clúster' }));
+    throw new Error(errorData.detail || errorData.message || 'Error desconegut');
   }
 
   return await res.json();
@@ -26,8 +26,8 @@ export async function updateInstancesStatus() {
   });
 
   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({ message: 'Error al actualizar estados' }));
-    throw new Error(errorData.detail || errorData.message || 'Error desconocido');
+    const errorData = await res.json().catch(() => ({ message: 'Error en actualitzar els estats' }));
+    throw new Error(errorData.detail || errorData.message || 'Error desconegut');
   }
 
   return await res.json();
