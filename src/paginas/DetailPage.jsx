@@ -12,14 +12,52 @@ const DetailPage = () => {
   const { user } = useAuth();
 
   const [items, setItems] = useState([]);
+  const [clusterMasterData, setClusterMasterData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const getInstanceClusterKey = (inst) => {
+    const id = inst.cluster_id ?? inst.clusterId ?? null;
+    if (id == null || id === "") return NO_CLUSTER_KEY;
+    return String(id);
+  };
+
+  const fetchClusterInfo = async (clusterKey) => {
+    if (!clusterKey || clusterKey === NO_CLUSTER_KEY) return null;
+    try {
+      const res = await fetch(`/api/v1/clusters/${clusterKey}`);
+      if (!res.ok) return null;
+      const cluster = await res.json();
+      const masterIp =
+        cluster.network_config?.master_ip ||
+        cluster.network_config?.masterIp ||
+        cluster.master_ip ||
+        cluster.masterIp ||
+        null;
+      const serviceUrl =
+        cluster.network_config?.service_url ||
+        cluster.network_config?.serviceUrl ||
+        null;
+      if (!masterIp && !serviceUrl) return null;
+      let finalUrl = serviceUrl;
+      if (!finalUrl && masterIp) {
+        finalUrl = `http://${masterIp}`;
+      }
+      return {
+        masterIp,
+        serviceUrl: finalUrl,
+      };
+    } catch {
+      return null;
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
         setError(null);
+        setClusterMasterData({});
 
         const allInstances = await fetchInstances();
         let filtered = allInstances;
@@ -36,14 +74,12 @@ const DetailPage = () => {
           );
         } else if (mode === "cluster" && provider) {
           filtered = filtered.filter((i) => {
-            const clusterKey =
-              i.cluster_id == null ? NO_CLUSTER_KEY : String(i.cluster_id);
+            const clusterKey = getInstanceClusterKey(i);
             return clusterKey === provider;
           });
         } else if (mode === "cluster-status" && provider && status) {
           filtered = filtered.filter((i) => {
-            const clusterKey =
-              i.cluster_id == null ? NO_CLUSTER_KEY : String(i.cluster_id);
+            const clusterKey = getInstanceClusterKey(i);
             return (
               clusterKey === provider &&
               (i.status || "").toLowerCase() === status.toLowerCase()
@@ -52,8 +88,29 @@ const DetailPage = () => {
         }
 
         setItems(filtered);
+
+        const uniqueClusterKeys = Array.from(
+          new Set(
+            filtered
+              .map((i) => getInstanceClusterKey(i))
+              .filter((k) => k && k !== NO_CLUSTER_KEY)
+          )
+        );
+
+        if (uniqueClusterKeys.length > 0) {
+          const entries = await Promise.all(
+            uniqueClusterKeys.map(async (clusterKey) => {
+              const data = await fetchClusterInfo(clusterKey);
+              return [clusterKey, data];
+            })
+          );
+          const map = {};
+          entries.forEach(([k, v]) => {
+            map[k] = v;
+          });
+          setClusterMasterData(map);
+        }
       } catch (err) {
-        console.error(err);
         setError(err.message || "Error desconocido");
       } finally {
         setLoading(false);
@@ -87,6 +144,30 @@ const DetailPage = () => {
       return `Instancias ${label} del cluster ${provider}`;
     }
     return "Detalle";
+  };
+
+  const getMasterUrlForInstance = (inst) => {
+    const clusterKey = getInstanceClusterKey(inst);
+    if (!clusterKey || clusterKey === NO_CLUSTER_KEY) return null;
+    const data = clusterMasterData[clusterKey];
+    if (!data) return null;
+    return data.serviceUrl || null;
+  };
+
+  const getMasterLabelForInstance = (inst) => {
+    const clusterKey = getInstanceClusterKey(inst);
+    if (!clusterKey || clusterKey === NO_CLUSTER_KEY) return null;
+    const data = clusterMasterData[clusterKey];
+    if (!data) return null;
+    if (data.masterIp) return data.masterIp;
+    if (data.serviceUrl) {
+      if (data.serviceUrl.startsWith("http://"))
+        return data.serviceUrl.slice(7);
+      if (data.serviceUrl.startsWith("https://"))
+        return data.serviceUrl.slice(8);
+      return data.serviceUrl;
+    }
+    return null;
   };
 
   return (
@@ -144,14 +225,11 @@ const DetailPage = () => {
                     ? inst.status.charAt(0).toUpperCase() +
                       inst.status.slice(1)
                     : "Sin estado";
+                const clusterKey = getInstanceClusterKey(inst);
                 const clusterLabel =
-                  inst.cluster_id == null ? "Sin cluster" : inst.cluster_id;
-                const masterIp =
-                  inst.master_ip ||
-                  inst.master_ip_address ||
-                  inst.master_ip_public ||
-                  "";
-                const masterIpUrl = masterIp ? `http://${masterIp}` : null;
+                  clusterKey === NO_CLUSTER_KEY ? "Sin cluster" : clusterKey;
+                const masterUrl = getMasterUrlForInstance(inst);
+                const masterLabel = getMasterLabelForInstance(inst);
 
                 return (
                   <div className="item-row" key={inst.id}>
@@ -182,13 +260,13 @@ const DetailPage = () => {
                     <span>{inst.region || "-"}</span>
 
                     <span>
-                      {masterIpUrl ? (
+                      {masterUrl && masterLabel ? (
                         <a
-                          href={masterIpUrl}
+                          href={masterUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          {masterIp}
+                          {masterLabel}
                         </a>
                       ) : (
                         "-"
